@@ -34,7 +34,10 @@ struct PulsarExample {
 	func connect(eventLoopGroup: EventLoopGroup) async throws {
 		var msgCount = 0
 		var clientCertPath: String? {
-			Bundle.module.path(forResource: "client-cert", ofType: "pem")
+			Bundle.module.path(
+				forResource: "client-cert",
+				ofType: "pem"
+			)
 		}
 
 		var clientKeyPath: String? {
