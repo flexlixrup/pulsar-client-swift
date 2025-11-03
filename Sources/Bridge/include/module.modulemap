@@ -1,0 +1,4 @@
+module Bridge {
+    header "PulsarSwiftBridge.h"
+    header "ListenerBridge.h"
+}

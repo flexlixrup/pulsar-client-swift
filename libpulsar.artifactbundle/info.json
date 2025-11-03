@@ -1,0 +1,23 @@
+{
+    "schemaVersion": "1.0",
+    "artifacts": {
+        "CxxPulsar": {
+            "type": "staticLibrary",
+            "version": "3.7.2",
+            "variants": [
+                {
+                    "path": "dist/macos/libpulsarwithdeps.a",
+                    "supportedTriples": [
+                        "arm64-apple-macosx"
+                    ],
+                    "staticLibraryMetadata": {
+                        "headerPaths": [
+                            "include"
+                        ],
+                        "moduleMapPath": "include/libpulsar.modulemap"
+                    }
+                }
+            ]
+        }
+    }
+}
