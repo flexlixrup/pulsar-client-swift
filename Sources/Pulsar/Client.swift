@@ -64,15 +64,23 @@ public final class Client: Sendable {
 		if let e = capturedError { throw e }
 		return Consumer(consumer: consumer)
 	}
-
+	public func close() throws {
+		let result = state.withLock { box in
+			box.raw.close()
+		}
+		if result.rawValue != 0 { //ResultOk
+			throw Result(cxx: result)
+		}
+	}
 	public func listen(on topic: String, subscriptionName: String) throws -> Listener {
 		let listener = Listener()
 		var configuration = _Pulsar.ConsumerConfiguration()
+		let listenerCtx = Unmanaged.passRetained(listener).toOpaque()
 		withUnsafeMutablePointer(to: &configuration) { cfgPtr in
 			pulsar_consumer_configuration_set_message_listener(
 				cfgPtr,
 				nil,
-				Unmanaged.passUnretained(listener).toOpaque()
+				listenerCtx
 			)
 		}
 
@@ -91,10 +99,14 @@ public final class Client: Sendable {
 			}
 		}
 
-		let consumerWrapper = Consumer(consumer: consumer)
+		if let e = capturedError {
+			Unmanaged<Listener>.fromOpaque(listenerCtx).release()
+			throw e
+		}
+
+		let consumerWrapper = Consumer(consumer: consumer, listenerContext: listenerCtx)
 		listener.attach(consumer: consumerWrapper)
 
-		if let e = capturedError { throw e }
 		return listener
 	}
 }

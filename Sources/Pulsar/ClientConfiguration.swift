@@ -152,5 +152,5 @@ public final class ClientConfiguration: Sendable {
 }
 
 public enum ProxyProtocol: Int, Sendable {
-	case SNI = 0
+	case sni = 0
 }

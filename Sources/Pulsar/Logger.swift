@@ -33,9 +33,8 @@ private func mapLevel(_ lvl: Int32) -> Logger.Level {
 		default: return .error // ERROR
 	}
 }
-
 @_cdecl("swift_pulsar_log_handler")
-func swift_pulsar_log_handler(
+func logHandler(
 	_ level: Int32,
 	_ file: UnsafePointer<CChar>?,
 	_ line: Int32,
@@ -51,7 +50,7 @@ func installPulsarLogging(
 	conf: inout _Pulsar.ClientConfiguration,
 	using logger: Logger
 ) {
-	pulsar_swift_set_log_callback(swift_pulsar_log_handler)
+	pulsar_swift_set_log_callback(logHandler)
 
 	_pulsarRegistry.set { lvl, _, _, msg in
 		logger.log(

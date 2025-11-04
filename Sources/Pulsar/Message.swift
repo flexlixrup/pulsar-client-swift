@@ -17,13 +17,11 @@ public final class Message: Sendable {
 		self.state = Mutex(Box(messageBuilder.build()))
 	}
 
-	/// Create a Swift `Message` wrapper around an existing C++ `_Pulsar.Message`.
-	/// This is used by the listener callback to forward incoming messages into Swift.
 	init(_ raw: _Pulsar.Message) {
 		self.state = Mutex(Box(raw))
 	}
 
-	func getRawMessage() -> _Pulsar.Message {
+	var rawMessage: _Pulsar.Message {
 		state.withLock { box in box.raw }
 	}
 

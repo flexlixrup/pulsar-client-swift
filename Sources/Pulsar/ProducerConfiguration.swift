@@ -1,27 +1,27 @@
 import CxxPulsar
 
 public enum PartitionsRoutingMode {
-	case UseSinglePartition
-	case RoundRobinDistribution
-	case CustomPartition
+	case useSinglePartition
+	case roundRobinDistribution
+	case customPartition
 }
 
 public enum HashingScheme {
-	case JavaStringHash
-	case Murmur3_32Hash
-	case BoostHash
+	case javaStringHash
+	case murmur3_32Hash
+	case boostHash
 }
 
 public enum BatchingType {
-	case Default
-	case KeyBased
+	case defaultBatching
+	case keyBased
 }
 
 public enum ProducerAccessMode: Int {
-	case Shared = 0
-	case Exclusive = 1
-	case WaitForExclusive = 2
-	case ExclusiveWithFencing = 3
+	case shared = 0
+	case exclusive = 1
+	case waitForExclusive = 2
+	case exclusiveWithFencing = 3
 }
 
 // public struct ProducerConfiguration {

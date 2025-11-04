@@ -1,4 +1,4 @@
-#include "PulsarSwiftBridge.h"
+#include "LoggerBridge.h"
 #include <atomic>
 #include <string>
 
