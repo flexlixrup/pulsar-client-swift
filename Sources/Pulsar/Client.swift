@@ -10,6 +10,7 @@ import Synchronization
 
 typealias _Pulsar = CxxPulsar.pulsar
 
+/// The Pulsar Client used to connect to a cluster and creating consumers, producers and listeners.
 public final class Client: Sendable {
 
 	// We have this safely synchronized via the Mutex
@@ -23,9 +24,18 @@ public final class Client: Sendable {
 
 	private let state: Mutex<Box>
 
+	/// The configuration of the Client.
 	public let config: ClientConfiguration
+	/// The URL of the Pulsar Cluster.
+	///
+	/// Per default it should start with `pulsar://` and be available on Port 6650 for non-secure, and start with `pulsar+ssl://` and be on port 6651 for secured clusters.
 	public let serviceURL: URL
 
+	/// Initialize a new Pulsar Client.
+	/// - Parameters:
+	///   - serviceURL: The serviceURL to connect to.
+	/// Per default it should start with `pulsar://` and be available on Port 6650 for non-secure, and start with `pulsar+ssl://` and be on port 6651 for secured clusters.
+	///   - config: The configuration of the Client.
 	public init(serviceURL: URL, config: ClientConfiguration = ClientConfiguration()) {
 		self.serviceURL = serviceURL
 		self.config = config
@@ -36,6 +46,9 @@ public final class Client: Sendable {
 		self.state = Mutex(Box(raw))
 	}
 
+	/// Create a producer.
+	/// - Parameter topic: The topic to create the producer on.
+	/// - Returns: The producer.
 	public func createProducer(topic: String) throws -> Producer {
 		var producer = _Pulsar.Producer()
 		var capturedError: Error?
@@ -51,7 +64,12 @@ public final class Client: Sendable {
 		return Producer(producer: producer)
 	}
 
-	public func subscribe(topic: String, subscriptionName: String, listen: Bool = false) throws -> Consumer {
+	/// Subscribe to a topic.
+	/// - Parameters:
+	///   - topic: The topic to subscribe to.
+	///   - subscriptionName: The subscription name.
+	/// - Returns: The consumer.
+	public func subscribe(topic: String, subscriptionName: String) throws -> Consumer {
 		var consumer = _Pulsar.Consumer()
 		var capturedError: Error?
 		state.withLock { box in
@@ -64,6 +82,8 @@ public final class Client: Sendable {
 		if let e = capturedError { throw e }
 		return Consumer(consumer: consumer)
 	}
+
+	/// Cloes the client.
 	public func close() throws {
 		let result = state.withLock { box in
 			box.raw.close()
@@ -72,6 +92,12 @@ public final class Client: Sendable {
 			throw Result(cxx: result)
 		}
 	}
+
+	/// Open a listener on the topic.
+	/// - Parameters:
+	///   - topic: The topic to listen to.
+	///   - subscriptionName: The subscription name.
+	/// - Returns: The Listener.
 	public func listen(on topic: String, subscriptionName: String) throws -> Listener {
 		let listener = Listener()
 		var configuration = _Pulsar.ConsumerConfiguration()

@@ -3,6 +3,18 @@ import CxxStdlib
 import Logging
 import Synchronization
 
+/// A Pulsar Message Listener.
+///
+/// The listener is modeled as an async sequence, to consume messages as a stream, use the following code:
+///
+/// ```swift
+///	for try await message in listener {
+///		print("Received message: \(message.content)")
+///		try listener.acknowledge(message)
+/// }
+/// ```
+///
+/// The listener will contiously consume messages until ``close()`` is called.
 public final class Listener: Sendable, AsyncSequence {
 	let logger = Logger(label: "Listener")
 	private let stream: AsyncThrowingStream<Message, Error>
@@ -19,7 +31,7 @@ public final class Listener: Sendable, AsyncSequence {
 		stream.makeAsyncIterator()
 	}
 
-	public init() {
+	init() {
 		var cont: AsyncThrowingStream<Message, Error>.Continuation!
 		stream = AsyncThrowingStream { c in
 			cont = c
@@ -34,6 +46,8 @@ public final class Listener: Sendable, AsyncSequence {
 		}
 	}
 
+	/// Acknowledge a message the listener received.
+	/// - Parameter message: The message to acknowledge.
 	public func acknowledge(_ message: Message) throws {
 		try consumerState.withLock { box in
 			guard let consumer = box.consumer else {
@@ -43,6 +57,18 @@ public final class Listener: Sendable, AsyncSequence {
 		}
 	}
 
+	public func acknowledgeAsync(_ message: Message) async throws {
+		let consumer = try consumerState.withLock { box -> Consumer in
+			guard let consumer = box.consumer else {
+				throw Result.consumerNotFound
+			}
+			return consumer
+		}
+
+		try await consumer.acknowledgeAsync(message)
+	}
+
+	/// Close the listener.
 	public func close() throws {
 		try consumerState.withLock { box in
 			if let consumer = box.consumer {
@@ -61,6 +87,7 @@ extension Listener {
 		continuation.yield(message)
 	}
 }
+
 @_cdecl("pulsar_swift_message_listener")
 func messageListenerCallback(
 	_ ctx: UnsafeMutableRawPointer?,

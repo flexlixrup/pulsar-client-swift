@@ -30,7 +30,7 @@ struct Example {
 				break
 			}
 			print("Received message: \(message.content)")
-			try listener.acknowledge(message)
+			try await listener.acknowledgeAsync(message)
 			count += 1
 		}
 		try listener.close()

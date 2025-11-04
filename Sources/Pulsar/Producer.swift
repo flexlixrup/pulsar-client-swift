@@ -4,11 +4,7 @@ import Foundation
 import Logging
 import Synchronization
 
-final class ProducerSendContinuationBox: @unchecked Sendable {
-	let cont: CheckedContinuation<Void, Error>
-	init(_ cont: CheckedContinuation<Void, Error>) { self.cont = cont }
-}
-
+/// A Producer to produce Pulsar messages-
 public final class Producer: Sendable {
 
 	// We have this safely synchronized via the Mutex
@@ -26,6 +22,10 @@ public final class Producer: Sendable {
 		self.state = Mutex(Box(producer))
 	}
 
+	/// Send a message synchronously.
+	/// - Parameter message: The message to send.
+	///
+	/// This method will block until the server acknowledged the message. Use ``sendAsync(_:)`` for the non-blocking version.
 	public func send(_ message: Message) throws {
 		var capturedError: Error?
 
@@ -40,9 +40,13 @@ public final class Producer: Sendable {
 		if let e = capturedError { throw e }
 	}
 
+	/// Send a message asynchronously.
+	/// - Parameter message: The message to send.
+	///
+	/// This method waits for the acknowledgement in a non-blocking fashion. To block the thread until the acknowledgement has been received, use ``send(_:)`` instead.
 	public func sendAsync(_ message: Message) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			let boxObj = ProducerSendContinuationBox(continuation)
+			let boxObj = ContinuationBox(continuation)
 			let ctx = Unmanaged.passRetained(boxObj).toOpaque()
 
 			state.withLock { box in
@@ -59,17 +63,13 @@ public final class Producer: Sendable {
 @_cdecl("pulsar_swift_send_callback")
 func sendCallback(_ ctx: UnsafeMutableRawPointer?, _ result: Int32, _ messageIdPtr: UnsafeRawPointer?) {
 	let logger: Logger = Logger(label: "ProducerCallback")
-	guard let ctx = ctx else { return }
+	guard let ctx = ctx else {
+		logger.error("sendCallback called with null context")
+		return
+	}
 	let any = Unmanaged<AnyObject>.fromOpaque(ctx).takeRetainedValue()
 
-	if let contBox = any as? ProducerSendContinuationBox {
-		if result == 0 {
-			logger.debug("Received ResultOk from send callback")
-			contBox.cont.resume()
-		} else {
-			let converted = Result(cxx: _Pulsar.Result(rawValue: result))
-			logger.debug("Received error from send callback: \(converted)")
-			contBox.cont.resume(throwing: converted)
-		}
+	if let contBox: ContinuationBox = any as? ContinuationBox {
+		contBox.checkContinuation(result: result, context: "sendCallback")
 	}
 }
