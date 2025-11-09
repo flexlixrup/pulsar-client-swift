@@ -84,6 +84,9 @@ extension Listener {
 
 	func receive(message: Message, consumerPtr: UnsafeMutableRawPointer?) {
 		logger.debug("Message received, yielding to stream")
+		consumerState.withLock { box in
+			box.consumer?.counterAll.increment()
+		}
 		continuation.yield(message)
 	}
 }

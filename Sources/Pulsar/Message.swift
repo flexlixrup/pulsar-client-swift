@@ -13,7 +13,10 @@ public final class Message: Sendable {
 
 	public init(content: String) {
 		var messageBuilder: _Pulsar.MessageBuilder = _Pulsar.MessageBuilder()
-		messageBuilder.setContent(std.string(content))
+		let utf8Content = Array(content.utf8)
+		utf8Content.withUnsafeBytes { buffer in
+			messageBuilder.setContent(buffer.baseAddress!, size: buffer.count)
+		}
 		self.state = Mutex(Box(messageBuilder.build()))
 	}
 

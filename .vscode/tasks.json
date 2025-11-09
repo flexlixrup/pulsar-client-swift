@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "swift",
+			"args": [
+				"build",
+				"--product",
+				"PulsarExample"
+			],
+			"env": {},
+			"cwd": "/Users/felixruppert/Developer/Swift/Pulsar/pulsar-client-swift",
+			"disableTaskQueue": true,
+			"dontTriggerTestDiscovery": true,
+			"group": "build",
+			"problemMatcher": [],
+			"label": "swift: Build Debug PulsarExample (pulsar-client-swift)",
+			"detail": "swift build --product PulsarExample"
+		}
+	]
+}

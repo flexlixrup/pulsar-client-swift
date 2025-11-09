@@ -3,5 +3,7 @@ module Bridge {
     header "LoggerBridge.h"
     header "ProducerBridge.h"
     header "ConsumerBridge.h"
+    header "MessageBuilderBridge.h"
+    header "ClientConfigurationBridge.h"
     export *
 }

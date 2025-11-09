@@ -61,7 +61,7 @@ public final class Client: Sendable {
 		}
 
 		if let e = capturedError { throw e }
-		return Producer(producer: producer)
+		return Producer(producer: producer, topic: topic)
 	}
 
 	/// Subscribe to a topic.
@@ -80,7 +80,7 @@ public final class Client: Sendable {
 		}
 
 		if let e = capturedError { throw e }
-		return Consumer(consumer: consumer)
+		return Consumer(consumer: consumer, subscriptionName: subscriptionName)
 	}
 
 	/// Cloes the client.
@@ -130,7 +130,7 @@ public final class Client: Sendable {
 			throw e
 		}
 
-		let consumerWrapper = Consumer(consumer: consumer, listenerContext: listenerCtx)
+		let consumerWrapper = Consumer(consumer: consumer, listenerContext: listenerCtx, subscriptionName: subscriptionName)
 		listener.attach(consumer: consumerWrapper)
 
 		return listener

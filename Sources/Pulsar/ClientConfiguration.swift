@@ -1,3 +1,4 @@
+import Bridge
 import CxxPulsar
 import Foundation
 import Logging
@@ -6,8 +7,8 @@ import Synchronization
 public final class ClientConfiguration: Sendable {
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
-		var raw: _Pulsar.ClientConfiguration
-		init(_ raw: _Pulsar.ClientConfiguration) { self.raw = raw }
+		var raw: CxxPulsar.pulsar.ClientConfiguration
+		init(_ raw: CxxPulsar.pulsar.ClientConfiguration) { self.raw = raw }
 	}
 	private let state: Mutex<Box>
 	public let memoryLimit: Int
@@ -59,7 +60,7 @@ public final class ClientConfiguration: Sendable {
 		proxyProtocol: ProxyProtocol? = nil,
 		keepAliveInterval: Duration = .seconds(30)
 	) {
-		self.state = Mutex(Box(_Pulsar.ClientConfiguration()))
+		self.state = Mutex(Box(CxxPulsar.pulsar.ClientConfiguration()))
 		self.memoryLimit = memoryLimit
 		self.connectionsPerBroker = connectionsPerBroker
 		self.operationsTimeout = operationsTimeout
@@ -106,42 +107,41 @@ public final class ClientConfiguration: Sendable {
 				return wholeSecMs &+ fracMs
 			}
 
-			box.raw.setMemoryLimit(UInt64(memoryLimit))
-			box.raw.setConnectionsPerBroker(Int32(connectionsPerBroker))
-			box.raw.setOperationTimeoutSeconds(Int32(toSeconds(operationsTimeout)))
-			box.raw.setIOThreads(Int32(ioThreads))
-			box.raw.setMessageListenerThreads(Int32(messageListenerThreads))
+			withUnsafeMutablePointer(to: &box.raw) { ptr in
+				Bridge_CC_setMemoryLimit(ptr, numericCast(memoryLimit))
+				Bridge_CC_setConnectionsPerBroker(ptr, numericCast(connectionsPerBroker))
+				Bridge_CC_setOperationTimeoutSeconds(ptr, numericCast(toSeconds(operationsTimeout)))
+				Bridge_CC_setIOThreads(ptr, numericCast(ioThreads))
+				Bridge_CC_setMessageListenerThreads(ptr, numericCast(messageListenerThreads))
 
-			box.raw.setConcurrentLookupRequest(Int32(concurrentLookupRequest))
-			box.raw.setMaxLookupRedirects(Int32(maxLookupRedirects))
-			box.raw.setInitialBackoffIntervalMs(Int32(toMilliseconds(initialBackoffInterval)))
-			box.raw.setMaxBackoffIntervalMs(Int32(toMilliseconds(maxBackoffInterval)))
+				Bridge_CC_setConcurrentLookupRequest(ptr, numericCast(concurrentLookupRequest))
+				Bridge_CC_setMaxLookupRedirects(ptr, numericCast(maxLookupRedirects))
+				Bridge_CC_setInitialBackoffIntervalMs(ptr, numericCast(toMilliseconds(initialBackoffInterval)))
+				Bridge_CC_setMaxBackoffIntervalMs(ptr, numericCast(toMilliseconds(maxBackoffInterval)))
 
-			box.raw.setUseTls(useTLS)
-			if let key = tlsPrivateKeyFilePath { box.raw.setTlsPrivateKeyFilePath(std.string(key.path)) }
-			if let cert = tlsCertificateFilePath { box.raw.setTlsCertificateFilePath(std.string(cert.path)) }
-			if let trust = tlsTrustCertsFilePath { box.raw.setTlsTrustCertsFilePath(std.string(trust.path)) }
-			box.raw.setTlsAllowInsecureConnection(tlsAllowInsecureConnection)
-			box.raw.setValidateHostName(tlsHostnameVerificationEnabled)
+				Bridge_CC_setUseTls(ptr, useTLS)
+				if let key = tlsPrivateKeyFilePath { Bridge_CC_setTlsPrivateKeyFilePath(ptr, key.path) }
+				if let cert = tlsCertificateFilePath { Bridge_CC_setTlsCertificateFilePath(ptr, cert.path) }
+				if let trust = tlsTrustCertsFilePath { Bridge_CC_setTlsTrustCertsFilePath(ptr, trust.path) }
+				Bridge_CC_setTlsAllowInsecureConnection(ptr, tlsAllowInsecureConnection)
+				Bridge_CC_setValidateHostName(ptr, tlsHostnameVerificationEnabled)
 
-			if let name = listenerName, !name.isEmpty {
-				box.raw.setListenerName(std.string(name))
-			}
+				if let name = listenerName, !name.isEmpty {
+					Bridge_CC_setListenerName(ptr, name)
+				}
 
-			box.raw.setStatsIntervalInSeconds(UInt32(toSeconds(statsInterval)))
-			box.raw.setPartititionsUpdateInterval(UInt32(toSeconds(partitionsUpdateInterval)))
-			box.raw.setKeepAliveIntervalInSeconds(UInt32(toSeconds(keepAliveInterval)))
+				Bridge_CC_setStatsIntervalInSeconds(ptr, numericCast(toSeconds(statsInterval)))
+				Bridge_CC_setPartitionsUpdateInterval(ptr, numericCast(toSeconds(partitionsUpdateInterval)))
+				Bridge_CC_setKeepAliveIntervalInSeconds(ptr, numericCast(toSeconds(keepAliveInterval)))
 
-			box.raw.setConnectionTimeout(Int32(toMilliseconds(connectTimeout)))
+				Bridge_CC_setConnectionTimeout(ptr, numericCast(toMilliseconds(connectTimeout)))
 
-			if let proxy = proxyServiceUrl {
-				box.raw.setProxyServiceUrl(std.string(proxy.absoluteString))
-			}
-			if let proxyProtocol {
-				let cxxProto: _Pulsar.ClientConfiguration.ProxyProtocol = .init(
-					rawValue: UInt32(proxyProtocol.rawValue)
-				)
-				box.raw.setProxyProtocol(cxxProto)
+				if let proxy = proxyServiceUrl {
+					Bridge_CC_setProxyServiceUrl(ptr, proxy.absoluteString)
+				}
+				if let proxyProtocol {
+					Bridge_CC_setProxyProtocol(ptr, numericCast(proxyProtocol.rawValue))
+				}
 			}
 		}
 	}

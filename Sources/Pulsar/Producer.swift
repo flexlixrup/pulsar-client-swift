@@ -2,11 +2,12 @@ import Bridge
 import CxxPulsar
 import Foundation
 import Logging
+import Metrics
 import Synchronization
 
 /// A Producer to produce Pulsar messages-
 public final class Producer: Sendable {
-
+	let topic: String
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
 		var raw: _Pulsar.Producer
@@ -16,10 +17,18 @@ public final class Producer: Sendable {
 		}
 	}
 
+	let counterAll: Counter
+	let counterFailed: Counter
+	let counterSuccess: Counter
+
 	private let state: Mutex<Box>
 
-	init(producer: _Pulsar.Producer) {
+	init(producer: _Pulsar.Producer, topic: String) {
 		self.state = Mutex(Box(producer))
+		self.topic = topic
+		self.counterAll = Counter(label: "pulsar_producer_messages_sent_topic_\(topic)")
+		self.counterFailed = Counter(label: "pulsar_producer_messages_failed_\(topic)")
+		self.counterSuccess = Counter(label: "pulsar_producer_messages_successful_\(topic)")
 	}
 
 	/// Send a message synchronously.
@@ -27,13 +36,17 @@ public final class Producer: Sendable {
 	///
 	/// This method will block until the server acknowledged the message. Use ``sendAsync(_:)`` for the non-blocking version.
 	public func send(_ message: Message) throws {
+		counterAll.increment()
 		var capturedError: Error?
 
 		state.withLock { box in
 			var messageId = _Pulsar.MessageId()
 			let result = box.raw.send(message.rawMessage, &messageId)
 			if result.rawValue != 0 {
+				counterFailed.increment()
 				capturedError = Result(cxx: result)
+			} else {
+				counterSuccess.increment()
 			}
 		}
 
@@ -46,9 +59,14 @@ public final class Producer: Sendable {
 	/// This method waits for the acknowledgement in a non-blocking fashion. To block the thread until the acknowledgement has been received, use ``send(_:)`` instead.
 	public func sendAsync(_ message: Message) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-			let boxObj = ContinuationBox(continuation)
+			counterAll.increment()
+			let boxObj = ContinuationBox(
+				continuation,
+				counterAll: nil,
+				counterFailed: counterFailed,
+				counterSuccess: counterSuccess
+			)
 			let ctx = Unmanaged.passRetained(boxObj).toOpaque()
-
 			state.withLock { box in
 				withUnsafeMutablePointer(to: &box.raw) { prodPtr in
 					withUnsafePointer(to: message.rawMessage) { msgPtr in

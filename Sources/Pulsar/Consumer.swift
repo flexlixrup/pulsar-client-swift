@@ -1,6 +1,7 @@
 import Bridge
 import CxxPulsar
 import Logging
+import Metrics
 import Synchronization
 
 final class ResultContinuationBox: Sendable {
@@ -23,6 +24,22 @@ public final class Consumer: Sendable {
 		}
 	}
 
+	let counterAll: Counter
+	let subscriptionName: String
+	let counterFailed: Counter
+	let counterSuccess: Counter
+	private let state: Mutex<Box>
+
+	init(consumer: _Pulsar.Consumer, listenerContext: UnsafeMutableRawPointer? = nil, subscriptionName: String) {
+		let box = Box(consumer)
+		box.listenerContext = listenerContext
+		self.state = Mutex(box)
+		self.subscriptionName = subscriptionName
+		self.counterAll = Counter(label: "pulsar_consumer_messages_sent_\(subscriptionName)")
+		self.counterFailed = Counter(label: "pulsar_consumer_messages_failed_\(subscriptionName)")
+		self.counterSuccess = Counter(label: "pulsar_consumer_messages_successful_\(subscriptionName)")
+	}
+
 	/// Close the consumer synchronously.
 	public func close() throws {
 		let result = state.withLock { box in
@@ -31,13 +48,6 @@ public final class Consumer: Sendable {
 		if result.rawValue != 0 { //ResultOk
 			throw Result(cxx: result)
 		}
-	}
-	private let state: Mutex<Box>
-
-	init(consumer: _Pulsar.Consumer, listenerContext: UnsafeMutableRawPointer? = nil) {
-		let box = Box(consumer)
-		box.listenerContext = listenerContext
-		self.state = Mutex(box)
 	}
 
 	/// Acknowledge a message.
@@ -68,7 +78,6 @@ public final class Consumer: Sendable {
 					}
 				}
 			}
-
 		}
 	}
 }

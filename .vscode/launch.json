@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:pulsar-client-swift}",
+            "name": "Debug PulsarExample",
+            "target": "PulsarExample",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug PulsarExample"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:pulsar-client-swift}",
+            "name": "Release PulsarExample",
+            "target": "PulsarExample",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release PulsarExample"
+        }
+    ]
+}

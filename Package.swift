@@ -13,7 +13,8 @@ let package = Package(
 		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-log.git", from: "1.0.0")
+		.package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+		.package(url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0")
 	],
 	targets: [
 		.target(
@@ -21,16 +22,19 @@ let package = Package(
 			dependencies: [
 				.target(name: "CxxPulsar"),
 				.target(name: "Bridge"),
+				.product(name: "Metrics", package: "swift-metrics"),
 				.product(name: "Logging", package: "swift-log")
+			],
+			resources: [
+				.copy("Resources/LICENSES")
 			],
 			swiftSettings: [.interoperabilityMode(.Cxx)],
 		),
-		//.binaryTarget(
-		//	name: "CxxPulsar",
-		//	url: "https://github.com/flexlixrup/pulsar-client-cpp-bundle/releases/download/v0.1.0/libpulsar.artifactbundle.zip",
-		//	checksum: "539b4d7789a9cd63c49d95d2aceb6bda4fc43cbbf14b99a8f61d061933454ed9"
-		//),
-		.binaryTarget(name: "CxxPulsar", path: "libpulsar.artifactbundle"),
+		.binaryTarget(
+			name: "CxxPulsar",
+			url: "https://github.com/flexlixrup/pulsar-client-cpp-bundle/releases/download/v3.7.2/libpulsar.artifactbundle.zip",
+			checksum: "ed9fcb21782891ef46a0ea46eeb5acfe7a860c4dd8a82e26ab26bdb728191153"
+		),
 		.target(
 			name: "Bridge",
 			dependencies: [.target(name: "CxxPulsar")],
