@@ -10,7 +10,7 @@ struct Example {
 			handler.logLevel = .trace
 			return handler
 		}
-		var client: Client = Client(serviceURL: URL(string: "pulsar://localhost:6650")!)
+		let client: Client = Client(serviceURL: URL(string: "pulsar://localhost:6650")!)
 		let producer = try client.createProducer(topic: "persistent://public/default/my-topic")
 		Task {
 			for i in 1 ... 10 {
@@ -26,6 +26,12 @@ struct Example {
 		try await producer.sendAsync(message)
 		let listener = try client.listen(on: "persistent://public/default/my-topic", subscriptionName: "my-subscription")
 		var count = 0
+		let consumer = try client.subscribe(
+			topic: "persistent://public/default/my-topic",
+			subscriptionName: "my-subscription-sync"
+		)
+		let consumedMessage = try consumer.receive(timeout: .seconds(10))
+		print("Synchronously received message: \(consumedMessage.content)")
 		for try await message in listener {
 			if count >= 35 {
 				break
