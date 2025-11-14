@@ -169,6 +169,6 @@ extension Result {
 	}
 
 	var cxxValue: _Pulsar.Result {
-		_Pulsar.Result(rawValue: Int32(self.rawValue))
+		_Pulsar.Result(rawValue: Int8(self.rawValue))
 	}
 }
