@@ -88,7 +88,7 @@ public final class ClientConfiguration: Sendable {
 
 	func setCxxConfig() {
 		state.withLock { box in
-			installPulsarLogging(conf: &box.raw, using: logger)
+			installPulsarLogging(conf: &box.raw)
 
 			withUnsafeMutablePointer(to: &box.raw) { ptr in
 				Bridge_CC_setMemoryLimit(ptr, numericCast(memoryLimit))

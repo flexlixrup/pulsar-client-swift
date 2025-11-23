@@ -7,7 +7,7 @@ struct Example {
 	static func main() async throws {
 		LoggingSystem.bootstrap { label in
 			var handler = StreamLogHandler.standardOutput(label: label)
-			handler.logLevel = .trace
+			handler.logLevel = .debug
 			return handler
 		}
 		let client: Client = Client(serviceURL: URL(string: "pulsar://localhost:6650")!)

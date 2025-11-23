@@ -39,7 +39,7 @@ public final class Consumer: Sendable {
 		self.counterFailed = Counter(label: "pulsar_consumer_messages_failed_\(subscriptionName)")
 		self.counterSuccess = Counter(label: "pulsar_consumer_messages_successful_\(subscriptionName)")
 	}
-	
+
 	/// Receive a single message and block until the message has been received.
 	/// - Parameter timeout: The timeout, if no message is received in time, the method will throw.
 	/// - Returns: The received message
