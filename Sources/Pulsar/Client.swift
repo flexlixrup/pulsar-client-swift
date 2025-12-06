@@ -6,6 +6,7 @@ import CxxPulsar
 import CxxStdlib
 import Foundation
 import Logging
+import Metrics
 import Synchronization
 
 typealias _Pulsar = CxxPulsar.pulsar
@@ -23,6 +24,13 @@ public final class Client: Sendable {
 	}
 
 	private let state: Mutex<Box>
+
+	let producersCreated: Counter
+	let producersFailed: Counter
+	let consumersCreated: Counter
+	let consumersFailed: Counter
+	let listenersCreated: Counter
+	let listenersFailed: Counter
 
 	/// The configuration of the Client.
 	public let config: ClientConfiguration
@@ -44,6 +52,12 @@ public final class Client: Sendable {
 			config.getConfig()
 		)
 		self.state = Mutex(Box(raw))
+		self.producersCreated = Counter(label: "pulsar_client_producers_created")
+		self.producersFailed = Counter(label: "pulsar_client_producers_failed")
+		self.consumersCreated = Counter(label: "pulsar_client_consumers_created")
+		self.consumersFailed = Counter(label: "pulsar_client_consumers_failed")
+		self.listenersCreated = Counter(label: "pulsar_client_listeners_created")
+		self.listenersFailed = Counter(label: "pulsar_client_listeners_failed")
 	}
 
 	/// Create a producer.
@@ -68,7 +82,11 @@ public final class Client: Sendable {
 			}
 		}
 
-		if let e = capturedError { throw e }
+		if let e = capturedError {
+			producersFailed.increment()
+			throw e
+		}
+		producersCreated.increment()
 		return Producer(producer: producer, topic: topic)
 	}
 
@@ -100,7 +118,11 @@ public final class Client: Sendable {
 			}
 		}
 
-		if let e = capturedError { throw e }
+		if let e = capturedError {
+			consumersFailed.increment()
+			throw e
+		}
+		consumersCreated.increment()
 		return Consumer(consumer: consumer, subscriptionName: subscriptionName)
 	}
 
@@ -148,11 +170,13 @@ public final class Client: Sendable {
 
 		if let e = capturedError {
 			Unmanaged<Listener<T>>.fromOpaque(listenerCtx).release()
+			listenersFailed.increment()
 			throw e
 		}
 
 		let consumerWrapper = Consumer<T>(consumer: consumer, listenerContext: listenerCtx, subscriptionName: subscriptionName)
 		listener.attach(consumer: consumerWrapper)
+		listenersCreated.increment()
 
 		return listener
 	}

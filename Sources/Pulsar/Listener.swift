@@ -1,6 +1,7 @@
 @preconcurrency import CxxPulsar
 import CxxStdlib
 import Logging
+import Metrics
 import Synchronization
 
 /// A Pulsar Message Listener.
@@ -19,6 +20,10 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 	let logger = Logger(label: "Listener")
 	private let stream: AsyncThrowingStream<Message<T>, Error>
 	let continuation: AsyncThrowingStream<Message<T>, Error>.Continuation
+	let messagesReceived: Counter
+	let acknowledgementsAll: Counter
+	let acknowledgementsFailed: Counter
+	let acknowledgementsSuccess: Counter
 
 	final class ConsumerBox: @unchecked Sendable {
 		var consumer: Consumer<T>?
@@ -38,6 +43,10 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 		}
 		continuation = cont
 		self.consumerState = Mutex(ConsumerBox(nil))
+		self.messagesReceived = Counter(label: "pulsar_listener_messages_received")
+		self.acknowledgementsAll = Counter(label: "pulsar_listener_acknowledgements_all")
+		self.acknowledgementsFailed = Counter(label: "pulsar_listener_acknowledgements_failed")
+		self.acknowledgementsSuccess = Counter(label: "pulsar_listener_acknowledgements_success")
 	}
 
 	func attach(consumer: Consumer<T>) {
@@ -49,23 +58,37 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 	/// Acknowledge a message the listener received.
 	/// - Parameter message: The message to acknowledge.
 	public func acknowledge(_ message: Message<T>) throws {
-		try consumerState.withLock { box in
-			guard let consumer = box.consumer else {
-				throw Result.consumerNotFound
+		acknowledgementsAll.increment()
+		do {
+			try consumerState.withLock { box in
+				guard let consumer = box.consumer else {
+					throw Result.consumerNotFound
+				}
+				try consumer.acknowledge(message)
 			}
-			try consumer.acknowledge(message)
+			acknowledgementsSuccess.increment()
+		} catch {
+			acknowledgementsFailed.increment()
+			throw error
 		}
 	}
 
 	public func acknowledgeAsync(_ message: Message<T>) async throws {
-		let consumer = try consumerState.withLock { box -> Consumer in
-			guard let consumer = box.consumer else {
-				throw Result.consumerNotFound
+		acknowledgementsAll.increment()
+		do {
+			let consumer = try consumerState.withLock { box -> Consumer in
+				guard let consumer = box.consumer else {
+					throw Result.consumerNotFound
+				}
+				return consumer
 			}
-			return consumer
-		}
 
-		try await consumer.acknowledgeAsync(message)
+			try await consumer.acknowledgeAsync(message)
+			acknowledgementsSuccess.increment()
+		} catch {
+			acknowledgementsFailed.increment()
+			throw error
+		}
 	}
 
 	/// Close the listener.
@@ -80,6 +103,7 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 
 	func receive(message: Message<T>, consumerPtr: UnsafeMutableRawPointer?) {
 		logger.debug("Message received, yielding to stream")
+		messagesReceived.increment()
 		consumerState.withLock { box in
 			box.consumer?.counterAll.increment()
 		}
