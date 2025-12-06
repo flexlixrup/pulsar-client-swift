@@ -2,10 +2,6 @@
 #include <pulsar/MessageBuilder.h>
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void Bridge_MB_setContent(pulsar::MessageBuilder *b, const void *data,
                           size_t size);
 
@@ -17,7 +13,3 @@ void Bridge_MB_setAllocatedContent(pulsar::MessageBuilder *b, void *data,
 
 void Bridge_MB_disableReplication(pulsar::MessageBuilder *b, bool flag);
 void Bridge_MB_setDeliverAt(pulsar::MessageBuilder *b, unsigned long long ts);
-
-#ifdef __cplusplus
-}
-#endif

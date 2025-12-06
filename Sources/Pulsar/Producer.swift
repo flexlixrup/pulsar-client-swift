@@ -70,7 +70,7 @@ public final class Producer<T: PulsarSchema>: Sendable {
 			state.withLock { box in
 				withUnsafeMutablePointer(to: &box.raw) { prodPtr in
 					withUnsafePointer(to: message.rawMessage) { msgPtr in
-						pulsar_producer_send_async(UnsafeMutableRawPointer(mutating: prodPtr), UnsafeRawPointer(msgPtr), nil, ctx)
+						pulsar_producer_send_async(UnsafeMutableRawPointer(mutating: prodPtr), UnsafeRawPointer(msgPtr), ctx)
 					}
 				}
 			}

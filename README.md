@@ -11,7 +11,7 @@ import Pulsar
 
 let client = Client(serviceURL: URL(string: "pulsar://localhost:6650")!)
 do {
-    let producer = try client.createProducer(topic: "my-topic")
+    let producer: Producer<String> = try client.createProducer(topic: "my-topic")
     let message = Message(content: "Hello Apache Pulsar")
     try producer.send(message)
     try client.close()

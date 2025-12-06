@@ -97,7 +97,6 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 						pulsar_consumer_acknowledge_async(
 							UnsafeMutableRawPointer(mutating: consPtr),
 							UnsafeRawPointer(msgPtr),
-							nil,
 							ctx
 						)
 					}
