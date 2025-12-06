@@ -38,7 +38,7 @@ public final class ConsumerConfiguration: Sendable {
 	public let consumerType: ConsumerType
 	public let receiverQueueSize: Int
 	public let maxTotalReceiverQueueSizeAcrossPartitions: Int
-	public let consumerName: String?
+	public let name: String?
 	public let unAckedMessagesTimeoutMs: UInt64
 	public let tickDurationInMs: UInt64
 	public let negativeAckRedeliveryDelayMs: Int64
@@ -58,7 +58,7 @@ public final class ConsumerConfiguration: Sendable {
 	public let autoAckOldestChunkedMessageOnQueueFull: Bool
 	public let expireTimeOfIncompleteChunkedMessageMs: Int64
 	public let startMessageIdInclusive: Bool
-	public let batchIndexAckEnabled: Bool
+	public let enablesBatchIndexAck: Bool
 	public let ackReceiptEnabled: Bool
 	public let startPaused: Bool
 
@@ -66,7 +66,7 @@ public final class ConsumerConfiguration: Sendable {
 		consumerType: ConsumerType = .exclusive,
 		receiverQueueSize: Int = 1000,
 		maxTotalReceiverQueueSizeAcrossPartitions: Int = 50000,
-		consumerName: String? = nil,
+		name: String? = nil,
 		unAckedMessagesTimeoutMs: UInt64 = 0,
 		tickDurationInMs: UInt64 = 1000,
 		negativeAckRedeliveryDelayMs: Int64 = 60000,
@@ -86,7 +86,7 @@ public final class ConsumerConfiguration: Sendable {
 		autoAckOldestChunkedMessageOnQueueFull: Bool = false,
 		expireTimeOfIncompleteChunkedMessageMs: Int64 = 60000,
 		startMessageIdInclusive: Bool = false,
-		batchIndexAckEnabled: Bool = false,
+		enablesBatchIndexAck: Bool = false,
 		ackReceiptEnabled: Bool = false,
 		startPaused: Bool = false
 	) {
@@ -94,7 +94,7 @@ public final class ConsumerConfiguration: Sendable {
 		self.consumerType = consumerType
 		self.receiverQueueSize = receiverQueueSize
 		self.maxTotalReceiverQueueSizeAcrossPartitions = maxTotalReceiverQueueSizeAcrossPartitions
-		self.consumerName = consumerName
+		self.name = name
 		self.unAckedMessagesTimeoutMs = unAckedMessagesTimeoutMs
 		self.tickDurationInMs = tickDurationInMs
 		self.negativeAckRedeliveryDelayMs = negativeAckRedeliveryDelayMs
@@ -114,7 +114,7 @@ public final class ConsumerConfiguration: Sendable {
 		self.autoAckOldestChunkedMessageOnQueueFull = autoAckOldestChunkedMessageOnQueueFull
 		self.expireTimeOfIncompleteChunkedMessageMs = expireTimeOfIncompleteChunkedMessageMs
 		self.startMessageIdInclusive = startMessageIdInclusive
-		self.batchIndexAckEnabled = batchIndexAckEnabled
+		self.enablesBatchIndexAck = enablesBatchIndexAck
 		self.ackReceiptEnabled = ackReceiptEnabled
 		self.startPaused = startPaused
 		setCxxConfig()
@@ -130,7 +130,7 @@ public final class ConsumerConfiguration: Sendable {
 					numericCast(maxTotalReceiverQueueSizeAcrossPartitions)
 				)
 
-				if let name = consumerName {
+				if let name = name {
 					Bridge_ConsumerConfig_setConsumerName(ptr, name)
 				}
 
@@ -154,7 +154,7 @@ public final class ConsumerConfiguration: Sendable {
 					numericCast(expireTimeOfIncompleteChunkedMessageMs)
 				)
 				Bridge_ConsumerConfig_setStartMessageIdInclusive(ptr, startMessageIdInclusive)
-				Bridge_ConsumerConfig_setBatchIndexAckEnabled(ptr, batchIndexAckEnabled)
+				Bridge_ConsumerConfig_setBatchIndexAckEnabled(ptr, enablesBatchIndexAck)
 				Bridge_ConsumerConfig_setAckReceiptEnabled(ptr, ackReceiptEnabled)
 				Bridge_ConsumerConfig_setStartPaused(ptr, startPaused)
 

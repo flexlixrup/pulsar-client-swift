@@ -28,7 +28,7 @@ final class ContinuationBox: Sendable {
 			cont.resume()
 		} else {
 			counterFailed?.increment()
-			let converted = Result(cxx: _Pulsar.Result(rawValue: Int8(result)))
+			let converted = PulsarResult(cxx: _Pulsar.Result(rawValue: Int8(result)))
 			logger.debug("\(context): Resuming continuation with error: \\(converted)")
 			cont.resume(throwing: converted)
 		}

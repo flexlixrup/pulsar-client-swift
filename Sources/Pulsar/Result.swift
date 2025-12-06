@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Result: Int, Error, CustomStringConvertible, Sendable {
+public enum PulsarResult: Int, Error, CustomStringConvertible, Sendable {
 	/// An internal error code used for retry
 	case retryable = -1
 	// Not used just kept for compatibility with C++ enum
@@ -162,10 +162,10 @@ public enum Result: Int, Error, CustomStringConvertible, Sendable {
 	}
 }
 
-extension Result {
+extension PulsarResult {
 	init(cxx value: _Pulsar.Result) {
 		print(value)
-		self = Result(rawValue: Int(value.rawValue)) ?? .unknownError
+		self = PulsarResult(rawValue: Int(value.rawValue)) ?? .unknownError
 	}
 
 	var cxxValue: _Pulsar.Result {

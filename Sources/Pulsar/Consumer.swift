@@ -43,7 +43,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 	/// Receive a single message and block until the message has been received.
 	/// - Parameter timeout: The timeout, if no message is received in time, the method will throw.
 	/// - Returns: The received message
-	public func receive(timeout: Duration = .zero) throws -> Message<T> {
+	public func receive(within timeout: Duration = .zero) throws -> Message<T> {
 		var cppMessage = _Pulsar.Message()
 		var result: pulsar.Result
 		if timeout != .zero {
@@ -59,7 +59,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 		self.counterAll.increment()
 		if result.rawValue != 0 { //ResultOk
 			self.counterFailed.increment()
-			throw Result(cxx: result)
+			throw PulsarResult(cxx: result)
 		}
 		self.counterSuccess.increment()
 		return Message<T>(cppMessage)
@@ -71,7 +71,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 			box.raw.close()
 		}
 		if result.rawValue != 0 { //ResultOk
-			throw Result(cxx: result)
+			throw PulsarResult(cxx: result)
 		}
 	}
 
@@ -82,11 +82,11 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 			box.raw.acknowledge(message.rawMessage)
 		}
 		if result.rawValue != 0 { //ResultOk
-			throw Result(cxx: result)
+			throw PulsarResult(cxx: result)
 		}
 	}
 
-	public func acknowledgeAsync(_ message: Message<T>) async throws {
+	public func acknowledge(_ message: Message<T>) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			let boxObj = ContinuationBox(continuation)
 			let ctx = Unmanaged.passRetained(boxObj).toOpaque()

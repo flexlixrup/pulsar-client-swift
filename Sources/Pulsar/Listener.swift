@@ -62,7 +62,7 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 		do {
 			try consumerState.withLock { box in
 				guard let consumer = box.consumer else {
-					throw Result.consumerNotFound
+					throw PulsarResult.consumerNotFound
 				}
 				try consumer.acknowledge(message)
 			}
@@ -73,17 +73,17 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 		}
 	}
 
-	public func acknowledgeAsync(_ message: Message<T>) async throws {
+	public func acknowledge(_ message: Message<T>) async throws {
 		acknowledgementsAll.increment()
 		do {
 			let consumer = try consumerState.withLock { box -> Consumer in
 				guard let consumer = box.consumer else {
-					throw Result.consumerNotFound
+					throw PulsarResult.consumerNotFound
 				}
 				return consumer
 			}
 
-			try await consumer.acknowledgeAsync(message)
+			try await consumer.acknowledge(message)
 			acknowledgementsSuccess.increment()
 		} catch {
 			acknowledgementsFailed.increment()

@@ -34,7 +34,7 @@ public final class Producer<T: PulsarSchema>: Sendable {
 	/// Send a message synchronously.
 	/// - Parameter message: The message to send.
 	///
-	/// This method will block until the server acknowledged the message. Use ``sendAsync(_:)`` for the non-blocking version.
+	/// This method will block until the server acknowledged the message. Use the async overload for the non-blocking version.
 	public func send(_ message: Message<T>) throws {
 		counterAll.increment()
 		var capturedError: Error?
@@ -44,7 +44,7 @@ public final class Producer<T: PulsarSchema>: Sendable {
 			let result = box.raw.send(message.rawMessage, &messageId)
 			if result.rawValue != 0 {
 				counterFailed.increment()
-				capturedError = Result(cxx: result)
+				capturedError = PulsarResult(cxx: result)
 			} else {
 				counterSuccess.increment()
 			}
@@ -56,8 +56,8 @@ public final class Producer<T: PulsarSchema>: Sendable {
 	/// Send a message asynchronously.
 	/// - Parameter message: The message to send.
 	///
-	/// This method waits for the acknowledgement in a non-blocking fashion. To block the thread until the acknowledgement has been received, use ``send(_:)`` instead.
-	public func sendAsync(_ message: Message<T>) async throws {
+	/// This method waits for the acknowledgement in a non-blocking fashion. To block the thread until the acknowledgement has been received, use the synchronous overload instead.
+	public func send(_ message: Message<T>) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			counterAll.increment()
 			let boxObj = ContinuationBox(
