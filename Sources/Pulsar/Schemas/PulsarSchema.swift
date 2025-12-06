@@ -10,6 +10,7 @@ public protocol PulsarSchema: Sendable {
 	static func getSchemaInfo() throws -> SchemaInfo
 }
 
+@frozen
 public enum PulsarSchemaType: Int32, Sendable {
 	case none = 0
 	case string = 1

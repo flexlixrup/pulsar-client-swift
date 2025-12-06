@@ -19,6 +19,12 @@ void Bridge_CC_setIOThreads(pulsar::ClientConfiguration *c, int v) {
   c->setIOThreads(v);
 }
 
+void Bridge_CC_setAuthentication(pulsar::ClientConfiguration *c,
+                                 pulsar::AuthenticationPtr *auth) {
+  if (auth)
+    c->setAuth(*auth);
+}
+
 void Bridge_CC_setMessageListenerThreads(pulsar::ClientConfiguration *c,
                                          int v) {
   c->setMessageListenerThreads(v);

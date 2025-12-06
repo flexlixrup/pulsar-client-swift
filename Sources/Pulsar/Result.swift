@@ -1,5 +1,6 @@
 import Foundation
 
+@frozen
 public enum PulsarResult: Int, Error, CustomStringConvertible, Sendable {
 	/// An internal error code used for retry
 	case retryable = -1

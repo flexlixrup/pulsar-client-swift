@@ -3,23 +3,30 @@ import CxxPulsar
 import Foundation
 import Synchronization
 
+@frozen
 public enum PartitionsRoutingMode: Int, Sendable {
-	case useSinglePartition = 0
-	case roundRobinDistribution = 1
-	case customPartition = 2
+	case singlePartition = 0
+	case roundRobin = 1
+	case custom = 2
 }
 
+@frozen
 public enum HashingScheme: Int, Sendable {
-	case murmur32Hash = 0
-	case boostHash = 1
-	case javaStringHash = 2
+	case murmur32 = 0
+	case boost = 1
+	case javaString = 2
 }
 
-public enum BatchingType: Int, Sendable {
-	case defaultBatching = 0
-	case keyBased = 1
+@frozen
+public enum CompressionType: Int, Sendable {
+	case none = 0
+	case lz4 = 1
+	case zlib = 2
+	case zstd = 3
+	case snappy = 4
 }
 
+@frozen
 public enum ProducerAccessMode: Int, Sendable {
 	case shared = 0
 	case exclusive = 1
@@ -27,12 +34,30 @@ public enum ProducerAccessMode: Int, Sendable {
 	case exclusiveWithFencing = 3
 }
 
-public enum CompressionType: Int, Sendable {
-	case none = 0
-	case lz4 = 1
-	case zlib = 2
-	case zstd = 3
-	case snappy = 4
+@frozen
+public struct BatchingConfiguration: Sendable {
+	public var maxMessages: UInt
+	public var maxSize: UInt
+	public var maxDelay: Duration
+	public var type: BatchingType
+
+	@frozen
+	public enum BatchingType: Int, Sendable {
+		case `default` = 0
+		case keyBased = 1
+	}
+
+	public init(
+		maxMessages: UInt = 1000,
+		maxSize: UInt = 128 * 1024,
+		maxDelay: Duration = .milliseconds(10),
+		type: BatchingType = .default
+	) {
+		self.maxMessages = maxMessages
+		self.maxSize = maxSize
+		self.maxDelay = maxDelay
+		self.type = type
+	}
 }
 
 public final class ProducerConfiguration: Sendable {
@@ -46,19 +71,15 @@ public final class ProducerConfiguration: Sendable {
 	public let name: String?
 	public let sendTimeout: Duration
 	public let initialSequenceId: Int64
-	public let compressionType: CompressionType
+	public let compression: CompressionType
 	public let maxPendingMessages: Int
 	public let maxPendingMessagesAcrossPartitions: Int
-	public let partitionsRoutingMode: PartitionsRoutingMode
+	public let routingMode: PartitionsRoutingMode
 	public let hashingScheme: HashingScheme
 	public let lazyStartPartitionedProducers: Bool
 	public let blockIfQueueFull: Bool
-	public let enablesBatching: Bool
-	public let batchingMaxMessages: UInt
-	public let batchingMaxAllowedSizeInBytes: UInt
-	public let batchingMaxPublishDelayMs: UInt
-	public let batchingType: BatchingType
-	public let enablesChunking: Bool
+	public let batching: BatchingConfiguration?
+	public let chunking: Bool
 	public let accessMode: ProducerAccessMode
 	public let properties: [String: String]
 
@@ -66,19 +87,15 @@ public final class ProducerConfiguration: Sendable {
 		name: String? = nil,
 		sendTimeout: Duration = .seconds(30),
 		initialSequenceId: Int64 = -1,
-		compressionType: CompressionType = .none,
+		compression: CompressionType = .none,
 		maxPendingMessages: Int = 1000,
 		maxPendingMessagesAcrossPartitions: Int = 50000,
-		partitionsRoutingMode: PartitionsRoutingMode = .roundRobinDistribution,
-		hashingScheme: HashingScheme = .boostHash,
+		routingMode: PartitionsRoutingMode = .roundRobin,
+		hashingScheme: HashingScheme = .boost,
 		lazyStartPartitionedProducers: Bool = false,
 		blockIfQueueFull: Bool = false,
-		enablesBatching: Bool = true,
-		batchingMaxMessages: UInt = 1000,
-		batchingMaxAllowedSizeInBytes: UInt = 131072, // 128 KB
-		batchingMaxPublishDelayMs: UInt = 10,
-		batchingType: BatchingType = .defaultBatching,
-		enablesChunking: Bool = false,
+		batching: BatchingConfiguration? = BatchingConfiguration(),
+		chunking: Bool = false,
 		accessMode: ProducerAccessMode = .shared,
 		properties: [String: String] = [:]
 	) {
@@ -86,19 +103,15 @@ public final class ProducerConfiguration: Sendable {
 		self.name = name
 		self.sendTimeout = sendTimeout
 		self.initialSequenceId = initialSequenceId
-		self.compressionType = compressionType
+		self.compression = compression
 		self.maxPendingMessages = maxPendingMessages
 		self.maxPendingMessagesAcrossPartitions = maxPendingMessagesAcrossPartitions
-		self.partitionsRoutingMode = partitionsRoutingMode
+		self.routingMode = routingMode
 		self.hashingScheme = hashingScheme
 		self.lazyStartPartitionedProducers = lazyStartPartitionedProducers
 		self.blockIfQueueFull = blockIfQueueFull
-		self.enablesBatching = enablesBatching
-		self.batchingMaxMessages = batchingMaxMessages
-		self.batchingMaxAllowedSizeInBytes = batchingMaxAllowedSizeInBytes
-		self.batchingMaxPublishDelayMs = batchingMaxPublishDelayMs
-		self.batchingType = batchingType
-		self.enablesChunking = enablesChunking
+		self.batching = batching
+		self.chunking = chunking
 		self.accessMode = accessMode
 		self.properties = properties
 		setCxxConfig()
@@ -113,19 +126,25 @@ public final class ProducerConfiguration: Sendable {
 
 				Bridge_PC_setSendTimeout(ptr, numericCast(toMilliseconds(sendTimeout)))
 				Bridge_PC_setInitialSequenceId(ptr, initialSequenceId)
-				Bridge_PC_setCompressionType(ptr, numericCast(compressionType.rawValue))
+				Bridge_PC_setCompressionType(ptr, numericCast(compression.rawValue))
 				Bridge_PC_setMaxPendingMessages(ptr, numericCast(maxPendingMessages))
 				Bridge_PC_setMaxPendingMessagesAcrossPartitions(ptr, numericCast(maxPendingMessagesAcrossPartitions))
-				Bridge_PC_setPartitionsRoutingMode(ptr, numericCast(partitionsRoutingMode.rawValue))
+				Bridge_PC_setPartitionsRoutingMode(ptr, numericCast(routingMode.rawValue))
 				Bridge_PC_setHashingScheme(ptr, numericCast(hashingScheme.rawValue))
 				Bridge_PC_setLazyStartPartitionedProducers(ptr, lazyStartPartitionedProducers)
 				Bridge_PC_setBlockIfQueueFull(ptr, blockIfQueueFull)
-				Bridge_PC_setBatchingEnabled(ptr, enablesBatching)
-				Bridge_PC_setBatchingMaxMessages(ptr, numericCast(batchingMaxMessages))
-				Bridge_PC_setBatchingMaxAllowedSizeInBytes(ptr, numericCast(batchingMaxAllowedSizeInBytes))
-				Bridge_PC_setBatchingMaxPublishDelayMs(ptr, numericCast(batchingMaxPublishDelayMs))
-				Bridge_PC_setBatchingType(ptr, numericCast(batchingType.rawValue))
-				Bridge_PC_setChunkingEnabled(ptr, enablesChunking)
+
+				if let batching = batching {
+					Bridge_PC_setBatchingEnabled(ptr, true)
+					Bridge_PC_setBatchingMaxMessages(ptr, numericCast(batching.maxMessages))
+					Bridge_PC_setBatchingMaxAllowedSizeInBytes(ptr, numericCast(batching.maxSize))
+					Bridge_PC_setBatchingMaxPublishDelayMs(ptr, numericCast(toMilliseconds(batching.maxDelay)))
+					Bridge_PC_setBatchingType(ptr, numericCast(batching.type.rawValue))
+				} else {
+					Bridge_PC_setBatchingEnabled(ptr, false)
+				}
+
+				Bridge_PC_setChunkingEnabled(ptr, chunking)
 				Bridge_PC_setAccessMode(ptr, numericCast(accessMode.rawValue))
 
 				for (name, value) in properties {
@@ -148,6 +167,7 @@ public final class ProducerConfiguration: Sendable {
 		}
 	}
 
+	@inline(__always)
 	func getConfig() -> _Pulsar.ProducerConfiguration {
 		state.withLock { box in box.raw }
 	}

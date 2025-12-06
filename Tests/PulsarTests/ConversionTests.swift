@@ -25,9 +25,8 @@ struct Conversions {
 		let cfg = ClientConfiguration(
 			memoryLimit: 12345,
 			connectionsPerBroker: 2,
-			useTLS: true,
-			proxyServiceUrl: proxyURL,
-			proxyProtocol: .sni
+			tls: TLSConfiguration(enabled: true),
+			proxy: ProxyConfiguration(serviceUrl: proxyURL, proxyProtocol: .sni)
 		)
 
 		let cppConfig = cfg.getConfig()

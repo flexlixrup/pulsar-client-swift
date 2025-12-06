@@ -18,7 +18,7 @@ extension PulsarSchema where Self: AvroProtocol {
 			guard let data = try schema!.data(using: .utf8),
 				let name = (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["name"] as? String
 			else {
-				throw PulsarError.invalidSchema
+				throw PulsarError.invalidSchema("Failed to extract schema name from Avro schema JSON")
 			}
 			return
 				SchemaInfo(
@@ -42,7 +42,7 @@ extension PulsarSchema where Self: AvroProtocol {
 			let data = schemaString.data(using: .utf8),
 			let name = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["name"] as? String
 		else {
-			throw PulsarError.invalidSchema
+			throw PulsarError.invalidSchema("Failed to get Avro schema info: unable to extract schema name")
 		}
 		return SchemaInfo(
 			schemaType: .avro,

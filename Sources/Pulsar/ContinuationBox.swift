@@ -21,6 +21,7 @@ final class ContinuationBox: Sendable {
 		self.counterSuccess = counterSuccess
 	}
 
+	@inline(__always)
 	func checkContinuation(result: Int32, context: String = "Generic") {
 		if result == 0 {
 			counterSuccess?.increment()

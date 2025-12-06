@@ -26,6 +26,7 @@ public final class Message<T: PulsarSchema>: Sendable {
 		self.state = Mutex(Box(raw))
 	}
 
+	@inline(__always)
 	var rawMessage: _Pulsar.Message {
 		state.withLock { box in box.raw }
 	}
@@ -39,7 +40,7 @@ public final class Message<T: PulsarSchema>: Sendable {
 				}
 
 				guard let dataPtr = dataPtr, size > 0 else {
-					throw PulsarError.invalidMessage
+					throw PulsarError.invalidMessage("Failed to extract data from message: null pointer or zero size")
 				}
 
 				defer {

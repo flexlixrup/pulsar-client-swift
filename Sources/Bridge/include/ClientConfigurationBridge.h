@@ -16,6 +16,9 @@ void Bridge_CC_setInitialBackoffIntervalMs(pulsar::ClientConfiguration *c,
                                            int v);
 void Bridge_CC_setMaxBackoffIntervalMs(pulsar::ClientConfiguration *c, int v);
 
+void Bridge_CC_setAuthentication(pulsar::ClientConfiguration *c,
+                                 pulsar::AuthenticationPtr *auth);
+
 void Bridge_CC_setUseTls(pulsar::ClientConfiguration *c, bool flag);
 void Bridge_CC_setTlsPrivateKeyFilePath(pulsar::ClientConfiguration *c,
                                         const char *path);
