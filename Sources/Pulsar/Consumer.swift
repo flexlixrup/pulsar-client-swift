@@ -11,7 +11,7 @@ final class ResultContinuationBox: Sendable {
 /// A Consumer to consume messages.
 ///
 /// This consumer can receive single messages and batch messages in a user-controlled pull-fashion. To continously receive messages in a stream, use the ``Listener``.
-public final class Consumer: Sendable {
+public final class Consumer<T: PulsarSchema>: Sendable {
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
 		var raw: _Pulsar.Consumer
@@ -19,7 +19,7 @@ public final class Consumer: Sendable {
 		init(_ raw: _Pulsar.Consumer) { self.raw = raw }
 		deinit {
 			if let ctx = listenerContext {
-				Unmanaged<Listener>.fromOpaque(ctx).release()
+				Unmanaged<Listener<T>>.fromOpaque(ctx).release()
 			}
 		}
 	}
@@ -43,7 +43,7 @@ public final class Consumer: Sendable {
 	/// Receive a single message and block until the message has been received.
 	/// - Parameter timeout: The timeout, if no message is received in time, the method will throw.
 	/// - Returns: The received message
-	public func receive(timeout: Duration = .zero) throws -> Message {
+	public func receive(timeout: Duration = .zero) throws -> Message<T> {
 		var cppMessage = _Pulsar.Message()
 		var result: pulsar.Result
 		if timeout != .zero {
@@ -62,7 +62,7 @@ public final class Consumer: Sendable {
 			throw Result(cxx: result)
 		}
 		self.counterSuccess.increment()
-		return Message(cppMessage)
+		return Message<T>(cppMessage)
 	}
 
 	/// Close the consumer synchronously.
@@ -77,7 +77,7 @@ public final class Consumer: Sendable {
 
 	/// Acknowledge a message.
 	/// - Parameter message: The message to acknowledge.
-	public func acknowledge(_ message: Message) throws {
+	public func acknowledge(_ message: Message<T>) throws {
 		let result = state.withLock { box in
 			box.raw.acknowledge(message.rawMessage)
 		}
@@ -86,7 +86,7 @@ public final class Consumer: Sendable {
 		}
 	}
 
-	public func acknowledgeAsync(_ message: Message) async throws {
+	public func acknowledgeAsync(_ message: Message<T>) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			let boxObj = ContinuationBox(continuation)
 			let ctx = Unmanaged.passRetained(boxObj).toOpaque()

@@ -6,7 +6,7 @@ import Metrics
 import Synchronization
 
 /// A Producer to produce Pulsar messages-
-public final class Producer: Sendable {
+public final class Producer<T: PulsarSchema>: Sendable {
 	let topic: String
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
@@ -35,7 +35,7 @@ public final class Producer: Sendable {
 	/// - Parameter message: The message to send.
 	///
 	/// This method will block until the server acknowledged the message. Use ``sendAsync(_:)`` for the non-blocking version.
-	public func send(_ message: Message) throws {
+	public func send(_ message: Message<T>) throws {
 		counterAll.increment()
 		var capturedError: Error?
 
@@ -57,7 +57,7 @@ public final class Producer: Sendable {
 	/// - Parameter message: The message to send.
 	///
 	/// This method waits for the acknowledgement in a non-blocking fashion. To block the thread until the acknowledgement has been received, use ``send(_:)`` instead.
-	public func sendAsync(_ message: Message) async throws {
+	public func sendAsync(_ message: Message<T>) async throws {
 		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
 			counterAll.increment()
 			let boxObj = ContinuationBox(

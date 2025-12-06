@@ -14,7 +14,8 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
-		.package(url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0")
+		.package(url: "https://github.com/apple/swift-metrics.git", "1.0.0" ..< "3.0.0"),
+		.package(url: "https://github.com/flexlixrup/avro-swift.git", branch: "main")
 	],
 	targets: [
 		.target(
@@ -23,7 +24,8 @@ let package = Package(
 				.target(name: "CxxPulsar"),
 				.target(name: "Bridge"),
 				.product(name: "Metrics", package: "swift-metrics"),
-				.product(name: "Logging", package: "swift-log")
+				.product(name: "Logging", package: "swift-log"),
+				.product(name: "Avro", package: "avro-swift")
 			],
 			resources: [
 				.copy("Resources/LICENSES")
@@ -42,7 +44,10 @@ let package = Package(
 		),
 		.testTarget(
 			name: "PulsarTests",
-			dependencies: ["Pulsar"],
+			dependencies: [
+				"Pulsar",
+				.product(name: "Avro", package: "avro-swift")
+			],
 			swiftSettings: [.interoperabilityMode(.Cxx)],
 		),
 		.executableTarget(

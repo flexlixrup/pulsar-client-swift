@@ -47,14 +47,22 @@ public final class Client: Sendable {
 	}
 
 	/// Create a producer.
-	/// - Parameter topic: The topic to create the producer on.
+	/// - Parameters:
+	///   - topic: The topic to create the producer on.
+	///   - config: The producer configuration (optional).
 	/// - Returns: The producer.
-	public func createProducer(topic: String) throws -> Producer {
+	public func createProducer<T: PulsarSchema>(
+		topic: String,
+		config: ProducerConfiguration = ProducerConfiguration()
+	) throws -> Producer<T> {
+		// Auto-set schema from the generic type
+		try config.setCxxSchema(T.self)
+
 		var producer = _Pulsar.Producer()
 		var capturedError: Error?
 
 		state.withLock { box in
-			let result = box.raw.createProducer(std.string(topic), &producer)
+			let result = box.raw.createProducer(std.string(topic), config.getConfig(), &producer)
 			if result.rawValue != 0 {
 				capturedError = Result(cxx: result)
 			}
@@ -68,12 +76,25 @@ public final class Client: Sendable {
 	/// - Parameters:
 	///   - topic: The topic to subscribe to.
 	///   - subscriptionName: The subscription name.
+	///   - config: The consumer configuration (optional).
 	/// - Returns: The consumer.
-	public func subscribe(topic: String, subscriptionName: String) throws -> Consumer {
+	public func subscribe<T: PulsarSchema>(
+		topic: String,
+		subscriptionName: String,
+		config: ConsumerConfiguration = ConsumerConfiguration()
+	) throws -> Consumer<T> {
+		// Auto-set schema from the generic type
+		try config.setCxxSchema(T.self)
+
 		var consumer = _Pulsar.Consumer()
 		var capturedError: Error?
 		state.withLock { box in
-			let result: pulsar.Result = box.raw.subscribe(std.string(topic), std.string(subscriptionName), &consumer)
+			let result: pulsar.Result = box.raw.subscribe(
+				std.string(topic),
+				std.string(subscriptionName),
+				config.getConfig(),
+				&consumer
+			)
 			if result.rawValue != 0 {
 				capturedError = Result(cxx: result)
 			}
@@ -98,8 +119,8 @@ public final class Client: Sendable {
 	///   - topic: The topic to listen to.
 	///   - subscriptionName: The subscription name.
 	/// - Returns: The Listener.
-	public func listen(on topic: String, subscriptionName: String) throws -> Listener {
-		let listener = Listener()
+	public func listen<T: PulsarSchema>(on topic: String, subscriptionName: String) throws -> Listener<T> {
+		let listener = Listener<T>()
 		var configuration = _Pulsar.ConsumerConfiguration()
 		let listenerCtx = Unmanaged.passRetained(listener).toOpaque()
 		withUnsafeMutablePointer(to: &configuration) { cfgPtr in
@@ -126,11 +147,11 @@ public final class Client: Sendable {
 		}
 
 		if let e = capturedError {
-			Unmanaged<Listener>.fromOpaque(listenerCtx).release()
+			Unmanaged<Listener<T>>.fromOpaque(listenerCtx).release()
 			throw e
 		}
 
-		let consumerWrapper = Consumer(consumer: consumer, listenerContext: listenerCtx, subscriptionName: subscriptionName)
+		let consumerWrapper = Consumer<T>(consumer: consumer, listenerContext: listenerCtx, subscriptionName: subscriptionName)
 		listener.attach(consumer: consumerWrapper)
 
 		return listener

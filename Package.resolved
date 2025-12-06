@@ -1,6 +1,15 @@
 {
-  "originHash" : "840232297d9b0e8596c6082aba3ab477f4627807c671b7fd2fbe91f7bf63e2ff",
+  "originHash" : "c03f61401d1a7eb9526703662d6f15489d9a75a0a49298b16e12553298644d64",
   "pins" : [
+    {
+      "identity" : "avro-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/flexlixrup/avro-swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "986a6feb0f35f024fba68fae415c3bb89b4c12bc"
+      }
+    },
     {
       "identity" : "swift-log",
       "kind" : "remoteSourceControl",
@@ -17,6 +26,15 @@
       "state" : {
         "revision" : "0743a9364382629da3bf5677b46a2c4b1ce5d2a6",
         "version" : "2.7.1"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-syntax.git",
+      "state" : {
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     }
   ],

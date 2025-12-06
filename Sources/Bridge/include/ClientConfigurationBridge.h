@@ -1,10 +1,6 @@
 #pragma once
 #include <pulsar/ClientConfiguration.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void Bridge_CC_setMemoryLimit(pulsar::ClientConfiguration *c,
                               unsigned long long v);
 void Bridge_CC_setConnectionsPerBroker(pulsar::ClientConfiguration *c, int v);
@@ -47,7 +43,3 @@ void Bridge_CC_setProxyServiceUrl(pulsar::ClientConfiguration *c,
                                   const char *url);
 void Bridge_CC_setProxyProtocol(pulsar::ClientConfiguration *c,
                                 unsigned int raw);
-
-#ifdef __cplusplus
-}
-#endif

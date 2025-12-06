@@ -1,4 +1,4 @@
-import CxxPulsar
+@preconcurrency import CxxPulsar
 import CxxStdlib
 import Logging
 import Synchronization
@@ -15,24 +15,24 @@ import Synchronization
 /// ```
 ///
 /// The listener will contiously consume messages until ``close()`` is called.
-public final class Listener: Sendable, AsyncSequence {
+public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 	let logger = Logger(label: "Listener")
-	private let stream: AsyncThrowingStream<Message, Error>
-	let continuation: AsyncThrowingStream<Message, Error>.Continuation
+	private let stream: AsyncThrowingStream<Message<T>, Error>
+	let continuation: AsyncThrowingStream<Message<T>, Error>.Continuation
 
 	final class ConsumerBox: @unchecked Sendable {
-		var consumer: Consumer?
-		init(_ c: Consumer?) { self.consumer = c }
+		var consumer: Consumer<T>?
+		init(_ c: Consumer<T>?) { self.consumer = c }
 	}
 
 	private let consumerState: Mutex<ConsumerBox>
 
-	public func makeAsyncIterator() -> AsyncThrowingStream<Message, Error>.AsyncIterator {
+	public func makeAsyncIterator() -> AsyncThrowingStream<Message<T>, Error>.AsyncIterator {
 		stream.makeAsyncIterator()
 	}
 
 	init() {
-		var cont: AsyncThrowingStream<Message, Error>.Continuation!
+		var cont: AsyncThrowingStream<Message<T>, Error>.Continuation!
 		stream = AsyncThrowingStream { c in
 			cont = c
 		}
@@ -40,7 +40,7 @@ public final class Listener: Sendable, AsyncSequence {
 		self.consumerState = Mutex(ConsumerBox(nil))
 	}
 
-	func attach(consumer: Consumer) {
+	func attach(consumer: Consumer<T>) {
 		consumerState.withLock { box in
 			box.consumer = consumer
 		}
@@ -48,7 +48,7 @@ public final class Listener: Sendable, AsyncSequence {
 
 	/// Acknowledge a message the listener received.
 	/// - Parameter message: The message to acknowledge.
-	public func acknowledge(_ message: Message) throws {
+	public func acknowledge(_ message: Message<T>) throws {
 		try consumerState.withLock { box in
 			guard let consumer = box.consumer else {
 				throw Result.consumerNotFound
@@ -57,7 +57,7 @@ public final class Listener: Sendable, AsyncSequence {
 		}
 	}
 
-	public func acknowledgeAsync(_ message: Message) async throws {
+	public func acknowledgeAsync(_ message: Message<T>) async throws {
 		let consumer = try consumerState.withLock { box -> Consumer in
 			guard let consumer = box.consumer else {
 				throw Result.consumerNotFound
@@ -77,17 +77,25 @@ public final class Listener: Sendable, AsyncSequence {
 			box.consumer = nil
 		}
 	}
-}
 
-extension Listener {
-	static let shared = Listener()
-
-	func receive(message: Message, consumerPtr: UnsafeMutableRawPointer?) {
+	func receive(message: Message<T>, consumerPtr: UnsafeMutableRawPointer?) {
 		logger.debug("Message received, yielding to stream")
 		consumerState.withLock { box in
 			box.consumer?.counterAll.increment()
 		}
 		continuation.yield(message)
+	}
+}
+
+// Protocol to handle messages in a type-erased way
+protocol MessageReceiver: AnyObject {
+	func receiveRawMessage(_ rawMsg: _Pulsar.Message, consumerPtr: UnsafeMutableRawPointer?)
+}
+
+extension Listener: MessageReceiver {
+	func receiveRawMessage(_ rawMsg: _Pulsar.Message, consumerPtr: UnsafeMutableRawPointer?) {
+		let message = Message<T>(rawMsg)
+		receive(message: message, consumerPtr: consumerPtr)
 	}
 }
 
@@ -97,24 +105,27 @@ func messageListenerCallback(
 	_ consumerPtr: UnsafeMutableRawPointer?,
 	_ messagePtr: UnsafeRawPointer?
 ) {
-	let logger: Logger = Logger(label: "ListenerCallback")
-	guard let msgPtr = messagePtr else { return }
+	guard let msgPtr = messagePtr, let ctx = ctx else { return }
 
+	// Copy the message to avoid capture issues
 	let rawMsg = msgPtr.assumingMemoryBound(to: _Pulsar.Message.self).pointee
-	let message = Message(rawMsg)
-
-	let listener: Listener = {
-		guard let ctx = ctx else {
-			return Listener.shared
-		}
-		return Unmanaged<Listener>.fromOpaque(ctx).takeUnretainedValue()
-	}()
-
 	let consumerAddress: UInt? = consumerPtr.map { UInt(bitPattern: $0) }
+	let ctxAddress = UInt(bitPattern: ctx)
 
-	Task.detached { [listener, message, consumerAddress] in
+	// We use an explicit @Sendable closure and trust that the C++ message copy is safe
+	Task.detached { @Sendable in
+		let logger: Logger = Logger(label: "ListenerCallback")
+		let restoredCtx = UnsafeMutableRawPointer(bitPattern: ctxAddress)!
 		let restoredConsumerPtr = consumerAddress.flatMap { UnsafeMutableRawPointer(bitPattern: $0) }
+
+		// Get the listener as MessageReceiver (type-erased)
+		let listenerObj = Unmanaged<AnyObject>.fromOpaque(restoredCtx).takeUnretainedValue()
+		guard let receiver = listenerObj as? MessageReceiver else {
+			logger.error("Context does not contain a valid MessageReceiver")
+			return
+		}
+
 		logger.debug("Listener received message via C++ callback")
-		listener.receive(message: message, consumerPtr: restoredConsumerPtr)
+		receiver.receiveRawMessage(rawMsg, consumerPtr: restoredConsumerPtr)
 	}
 }
