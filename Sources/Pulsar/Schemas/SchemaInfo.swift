@@ -2,6 +2,7 @@ import CxxPulsar
 import CxxStdlib
 import Synchronization
 
+/// Information about a message schema.
 public final class SchemaInfo: Sendable {
 
 	final class Box: @unchecked Sendable {

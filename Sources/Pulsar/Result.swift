@@ -1,114 +1,112 @@
 import Foundation
 
+/// Result codes returned by Pulsar operations.
 @frozen
-public enum PulsarResult: Int, Error, CustomStringConvertible, Sendable {
+public enum PulsarError: Int, Error, CustomStringConvertible, Sendable {
 	/// An internal error code used for retry
 	case retryable = -1
-	// Not used just kept for compatibility with C++ enum
 	/// Operation completed successfully
+	/// Not used just kept for compatibility with C++ enum
 	case ok = 0
-	case unknownError
 	/// Unknown error happened on broker
-	case invalidConfiguration
+	case unknownError
 	/// Invalid configuration
-	case timeout
+	case invalidConfiguration
 	/// Operation timed out
-	case lookupError
+	case timeout
 	/// Broker lookup failed
-	case connectError
+	case lookupError
 	/// Failed to connect to broker
-	case readError
+	case connectError
 	/// Failed to read from socket
-
-	case authenticationError
+	case readError
 	/// Authentication failed on broker
-	case authorizationError
+	case authenticationError
 	/// Client not authorized to create producer/consumer
-	case errorGettingAuthenticationData
+	case authorizationError
 	/// Client cannot find authorization data
-
-	case brokerMetadataError
+	case errorGettingAuthenticationData
 	/// Broker failed in updating metadata
-	case brokerPersistenceError
+	case brokerMetadataError
 	/// Broker failed to persist entry
-	case checksumError
+	case brokerPersistenceError
 	/// Corrupt message checksum failure
-
-	case consumerBusy
+	case checksumError
 	/// Exclusive consumer is already connected
-	case notConnected
+	case consumerBusy
 	/// Producer/Consumer is not currently connected to broker
-	case alreadyClosed
+	case notConnected
 	/// Producer/Consumer is already closed and not accepting any operation
-
-	case invalidMessage
+	case alreadyClosed
 	/// Error in publishing an already used message
-
-	case consumerNotInitialized
+	case invalidMessage
 	/// Consumer is not initialized
-	case producerNotInitialized
+	case consumerNotInitialized
 	/// Producer is not initialized
-	case producerBusy
+	case producerNotInitialized
 	/// Producer with same name is already connected
-	case tooManyLookupRequests
+	case producerBusy
 	/// Too many concurrent lookup requests
-
-	case invalidTopicName
+	case tooManyLookupRequests
 	/// Invalid topic name
-	case invalidUrl
+	case invalidTopicName
 	/// Client initialized with invalid broker URL
-	case serviceUnitNotReady
+	case invalidUrl
 	/// Service unit unloaded before producer/consumer creation
-	case operationNotSupported
+	case serviceUnitNotReady
 	/// Operation not supported
-	case producerBlockedQuotaExceededError
+	case operationNotSupported
 	/// Producer is blocked
-	case producerBlockedQuotaExceededException
+	case producerBlockedQuotaExceededError
 	/// Producer is getting exception
-	case producerQueueIsFull
+	case producerBlockedQuotaExceededException
 	/// Producer queue is full
-	case messageTooBig
+	case producerQueueIsFull
 	/// Trying to send a message exceeding the max size
-	case topicNotFound
+	case messageTooBig
 	/// Topic not found
-	case subscriptionNotFound
+	case topicNotFound
 	/// Subscription not found
-	case consumerNotFound
+	case subscriptionNotFound
 	/// Consumer not found
-	case unsupportedVersionError
+	case consumerNotFound
 	/// Older client/version doesn’t support a required feature
-	case topicTerminated
+	case unsupportedVersionError
 	/// Topic was already terminated
-	case cryptoError
+	case topicTerminated
 	/// Error when crypto operation fails
+	case cryptoError
 
-	case incompatibleSchema
 	/// Specified schema is incompatible with the topic's schema
-	case consumerAssignError
+	case incompatibleSchema
 	/// Error when assigning messages to a new consumer
-	case cumulativeAckNotAllowed
+	case consumerAssignError
 	/// Not allowed to call cumulative acknowledgement in Shared or Key_Shared mode
-	case transactionCoordinatorNotFound
+	case cumulativeAckNotAllowed
 	/// Transaction coordinator not found
-	case invalidTxnStatus
+	case transactionCoordinatorNotFound
 	/// Invalid transaction status error
-	case notAllowed
+	case invalidTxnStatus
 	/// Operation not allowed
-	case transactionConflict
+	case notAllowed
 	/// Transaction acknowledgment conflict
-	case transactionNotFound
+	case transactionConflict
 	/// Transaction not found
-	case producerFenced
+	case transactionNotFound
 	/// Producer was fenced by broker
+	case producerFenced
 
-	case memoryBufferIsFull
 	/// Client-wide memory limit has been reached
-	case interrupted
+	case memoryBufferIsFull
 	/// Interrupted while waiting to dequeue
-	case disconnected
+	case interrupted
 	/// Client connection has been disconnected
+	case disconnected
+	/// Schema is not valid
+	case invalidSchema
 
 	// MARK: - CustomStringConvertible
+	/// A human-readable description of the result.
 	public var description: String {
 		switch self {
 			case .ok: return "OK"
@@ -159,14 +157,15 @@ public enum PulsarResult: Int, Error, CustomStringConvertible, Sendable {
 			case .memoryBufferIsFull: return "Memory Buffer Is Full"
 			case .interrupted: return "Interrupted"
 			case .disconnected: return "Disconnected"
+			case .invalidSchema: return "Schema is not valid."
 		}
 	}
 }
 
-extension PulsarResult {
+extension PulsarError {
 	init(cxx value: _Pulsar.Result) {
 		print(value)
-		self = PulsarResult(rawValue: Int(value.rawValue)) ?? .unknownError
+		self = PulsarError(rawValue: Int(value.rawValue)) ?? .unknownError
 	}
 
 	var cxxValue: _Pulsar.Result {

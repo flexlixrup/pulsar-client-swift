@@ -4,8 +4,8 @@ import Logging
 import Pulsar
 import Testing
 
-@Suite("IntegrationTests", .serialized, .disabled(if: ProcessInfo.processInfo.environment["CI"] == "true"))
-struct IntegrationTests {
+@Suite("SchemaIntegrationTests", .serialized, .disabled(if: ProcessInfo.processInfo.environment["CI"] == "true"))
+struct SchemaIntegrationTests {
 
 	@AvroSchema
 	struct ArrayRecord: PulsarSchema {

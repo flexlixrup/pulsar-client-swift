@@ -3,6 +3,7 @@ import CxxPulsar
 import Foundation
 import Synchronization
 
+/// Type of consumer subscription.
 @frozen
 public enum ConsumerType: Int, Sendable {
 	case exclusive = 0
@@ -11,6 +12,7 @@ public enum ConsumerType: Int, Sendable {
 	case keyShared = 3
 }
 
+/// Mode for regex-based topic subscriptions.
 @frozen
 public enum RegexSubscriptionMode: Int, Sendable {
 	case persistentOnly = 0
@@ -18,12 +20,14 @@ public enum RegexSubscriptionMode: Int, Sendable {
 	case all = 2
 }
 
+/// Initial position in the topic for a new subscription.
 @frozen
 public enum InitialPosition: Int, Sendable {
 	case latest = 0
 	case earliest = 1
 }
 
+/// Action to take when message decryption fails.
 @frozen
 public enum CryptoFailureAction: Int, Sendable {
 	case fail = 0
@@ -31,16 +35,25 @@ public enum CryptoFailureAction: Int, Sendable {
 	case consume = 2
 }
 
+/// Configuration for message acknowledgment behavior.
 @frozen
 public struct AcknowledgmentConfiguration: Sendable {
+	/// Timeout for unacknowledged messages.
 	public var unackedTimeout: Duration
+	/// Duration of each tick for timeout checks.
 	public var tickDuration: Duration
+	/// Delay before redelivering negatively acknowledged messages.
 	public var negativeRedeliveryDelay: Duration
+	/// Time to group acknowledgments.
 	public var groupingTime: Duration
+	/// Maximum number of acknowledgments to group.
 	public var groupingMaxSize: Int64
+	/// Whether acknowledgment receipts are enabled.
 	public var receiptEnabled: Bool
+	/// Whether batch index acknowledgment is enabled.
 	public var batchIndexEnabled: Bool
 
+	/// Creates a new acknowledgment configuration.
 	public init(
 		unackedTimeout: Duration = .zero,
 		tickDuration: Duration = .seconds(1),
@@ -60,12 +73,17 @@ public struct AcknowledgmentConfiguration: Sendable {
 	}
 }
 
+/// Configuration for handling chunked messages.
 @frozen
 public struct ChunkedMessageConfiguration: Sendable {
+	/// Maximum number of pending chunked messages.
 	public var maxPending: UInt
+	/// Whether to auto-acknowledge oldest message when queue is full.
 	public var autoAckOldestOnQueueFull: Bool
+	/// Expiration time for incomplete chunked messages.
 	public var expireTimeOfIncomplete: Duration
 
+	/// Creates a new chunked message configuration.
 	public init(
 		maxPending: UInt = 10,
 		autoAckOldestOnQueueFull: Bool = false,
@@ -77,6 +95,7 @@ public struct ChunkedMessageConfiguration: Sendable {
 	}
 }
 
+/// Configuration for a Pulsar consumer.
 public final class ConsumerConfiguration: Sendable {
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
@@ -85,25 +104,44 @@ public final class ConsumerConfiguration: Sendable {
 	}
 	private let state: Mutex<Box>
 
+	/// The consumer type.
 	public let type: ConsumerType
+	/// Size of the receiver queue.
 	public let receiverQueueSize: Int
+	/// Maximum total receiver queue size across partitions.
 	public let maxTotalReceiverQueueSizeAcrossPartitions: Int
+	/// Consumer name.
 	public let name: String?
+	/// Acknowledgment configuration.
 	public let acknowledgment: AcknowledgmentConfiguration
+	/// Cache time for broker consumer statistics.
 	public let brokerConsumerStatsCacheTime: Duration
+	/// Action to take on crypto failures.
 	public let cryptoFailureAction: CryptoFailureAction
+	/// Whether to read compacted topics.
 	public let readCompacted: Bool
+	/// Period for pattern auto-discovery in seconds.
 	public let patternAutoDiscoveryPeriod: Int
+	/// Regex subscription mode.
 	public let regexSubscriptionMode: RegexSubscriptionMode
+	/// Initial position for the subscription.
 	public let subscriptionInitialPosition: InitialPosition
+	/// Whether subscription state replication is enabled.
 	public let replicateSubscriptionStateEnabled: Bool
+	/// Custom properties for the consumer.
 	public let properties: [String: String]
+	/// Custom properties for the subscription.
 	public let subscriptionProperties: [String: String]
+	/// Priority level for the consumer.
 	public let priorityLevel: Int
+	/// Chunked message configuration.
 	public let chunkedMessage: ChunkedMessageConfiguration
+	/// Whether the start message ID is inclusive.
 	public let startMessageIdInclusive: Bool
+	/// Whether the consumer starts in paused state.
 	public let startPaused: Bool
 
+	/// Creates a new consumer configuration.
 	public init(
 		type: ConsumerType = .exclusive,
 		receiverQueueSize: Int = 1000,

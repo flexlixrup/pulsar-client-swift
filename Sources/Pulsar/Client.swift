@@ -44,12 +44,17 @@ public final class Client: Sendable {
 	///   - serviceURL: The serviceURL to connect to.
 	/// Per default it should start with `pulsar://` and be available on Port 6650 for non-secure, and start with `pulsar+ssl://` and be on port 6651 for secured clusters.
 	///   - config: The configuration of the Client.
-	public init(serviceURL: URL, config: ClientConfiguration = ClientConfiguration()) {
+	public init(serviceURL: URL, authentication: Authentication? = nil, config: ClientConfiguration = ClientConfiguration()) {
 		self.serviceURL = serviceURL
 		self.config = config
+		var rawConfig = config.getConfig()
+		if let authentication {
+			var authPointer = authentication.authPointer._authPointer
+			Bridge_CC_setAuthentication(&rawConfig, &authPointer)
+		}
 		let raw = _Pulsar.Client(
 			std.string(serviceURL.absoluteString),
-			config.getConfig()
+			rawConfig
 		)
 		self.state = Mutex(Box(raw))
 		self.producersCreated = Counter(label: "pulsar_client_producers_created")
@@ -78,7 +83,7 @@ public final class Client: Sendable {
 		state.withLock { box in
 			let result = box.raw.createProducer(std.string(topic), configuration.getConfig(), &producer)
 			if result.rawValue != 0 {
-				capturedError = PulsarResult(cxx: result)
+				capturedError = PulsarError(cxx: result)
 			}
 		}
 
@@ -114,7 +119,7 @@ public final class Client: Sendable {
 				&consumer
 			)
 			if result.rawValue != 0 {
-				capturedError = PulsarResult(cxx: result)
+				capturedError = PulsarError(cxx: result)
 			}
 		}
 
@@ -132,7 +137,7 @@ public final class Client: Sendable {
 			box.raw.close()
 		}
 		if result.rawValue != 0 { //ResultOk
-			throw PulsarResult(cxx: result)
+			throw PulsarError(cxx: result)
 		}
 	}
 
@@ -164,7 +169,7 @@ public final class Client: Sendable {
 				&consumer
 			)
 			if result.rawValue != 0 {
-				capturedError = PulsarResult(cxx: result)
+				capturedError = PulsarError(cxx: result)
 			}
 		}
 

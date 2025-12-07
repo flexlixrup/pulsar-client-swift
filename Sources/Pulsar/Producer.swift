@@ -44,7 +44,7 @@ public final class Producer<T: PulsarSchema>: Sendable {
 			let result = box.raw.send(message.rawMessage, &messageId)
 			if result.rawValue != 0 {
 				counterFailed.increment()
-				capturedError = PulsarResult(cxx: result)
+				capturedError = PulsarError(cxx: result)
 			} else {
 				counterSuccess.increment()
 			}

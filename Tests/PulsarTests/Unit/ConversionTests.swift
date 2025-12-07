@@ -11,11 +11,11 @@ struct Conversions {
 	@Test("Result enum conversion")
 	func resultEnum() {
 		let resultRetryable = _Pulsar.Result.init(rawValue: -1) // ResultRetryable
-		let swiftResultRetryable = PulsarResult(cxx: resultRetryable)
+		let swiftResultRetryable = PulsarError(cxx: resultRetryable)
 		#expect(swiftResultRetryable == .retryable)
 
 		let resultChecksumError = _Pulsar.Result.init(rawValue: 12) // ResultChecksumError
-		let swiftResultChecksumError = PulsarResult(cxx: resultChecksumError)
+		let swiftResultChecksumError = PulsarError(cxx: resultChecksumError)
 		#expect(swiftResultChecksumError == .checksumError)
 	}
 

@@ -1,6 +1,7 @@
 import CxxPulsar
 import Foundation
 
+/// Protocol for types that can be serialized and sent as Pulsar messages.
 public protocol PulsarSchema: Sendable {
 	var schemaType: PulsarSchemaType { get }
 	var schema: String? { get throws }
@@ -10,6 +11,7 @@ public protocol PulsarSchema: Sendable {
 	static func getSchemaInfo() throws -> SchemaInfo
 }
 
+/// Type of schema used for message serialization.
 @frozen
 public enum PulsarSchemaType: Int32, Sendable {
 	case none = 0

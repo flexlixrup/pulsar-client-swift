@@ -3,8 +3,8 @@ import Testing
 
 @testable import Pulsar
 
-@Suite("SchemaTests")
-struct SchemaTests {
+@Suite("SchemaUnitTests")
+struct SchemaUnitTests {
 
 	@Test("Bool schema encoding/decoding")
 	func boolSchema() throws {

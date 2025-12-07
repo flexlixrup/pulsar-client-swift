@@ -4,6 +4,7 @@ import CxxStdlib
 import Foundation
 import Synchronization
 
+/// A message in Pulsar.
 public final class Message<T: PulsarSchema>: Sendable {
 
 	final class Box: @unchecked Sendable {
@@ -13,6 +14,7 @@ public final class Message<T: PulsarSchema>: Sendable {
 
 	private let state: Mutex<Box>
 
+	/// Creates a new message with the given content.
 	public init(content: T) throws {
 		var messageBuilder: _Pulsar.MessageBuilder = _Pulsar.MessageBuilder()
 		let contentData = try content.encode()
@@ -31,6 +33,7 @@ public final class Message<T: PulsarSchema>: Sendable {
 		state.withLock { box in box.raw }
 	}
 
+	/// The content of the message.
 	public var content: T {
 		get throws {
 			let data = try state.withLock { box in
@@ -40,7 +43,7 @@ public final class Message<T: PulsarSchema>: Sendable {
 				}
 
 				guard let dataPtr = dataPtr, size > 0 else {
-					throw PulsarError.invalidMessage("Failed to extract data from message: null pointer or zero size")
+					throw PulsarError.invalidMessage
 				}
 
 				defer {

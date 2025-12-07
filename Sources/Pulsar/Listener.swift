@@ -62,7 +62,7 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 		do {
 			try consumerState.withLock { box in
 				guard let consumer = box.consumer else {
-					throw PulsarResult.consumerNotFound
+					throw PulsarError.consumerNotFound
 				}
 				try consumer.acknowledge(message)
 			}
@@ -78,7 +78,7 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 		do {
 			let consumer = try consumerState.withLock { box -> Consumer in
 				guard let consumer = box.consumer else {
-					throw PulsarResult.consumerNotFound
+					throw PulsarError.consumerNotFound
 				}
 				return consumer
 			}

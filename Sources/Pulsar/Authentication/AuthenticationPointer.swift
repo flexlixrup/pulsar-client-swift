@@ -1,6 +1,7 @@
 import CxxPulsar
 import Synchronization
 
+/// A thread-safe wrapper for the C++ authentication pointer.
 public final class AuthPointer: @unchecked Sendable {
 
 	final class Box: @unchecked Sendable {

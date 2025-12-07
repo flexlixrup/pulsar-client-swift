@@ -59,7 +59,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 		self.counterAll.increment()
 		if result.rawValue != 0 { //ResultOk
 			self.counterFailed.increment()
-			throw PulsarResult(cxx: result)
+			throw PulsarError(cxx: result)
 		}
 		self.counterSuccess.increment()
 		return Message<T>(cppMessage)
@@ -71,7 +71,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 			box.raw.close()
 		}
 		if result.rawValue != 0 { //ResultOk
-			throw PulsarResult(cxx: result)
+			throw PulsarError(cxx: result)
 		}
 	}
 
@@ -82,7 +82,7 @@ public final class Consumer<T: PulsarSchema>: Sendable {
 			box.raw.acknowledge(message.rawMessage)
 		}
 		if result.rawValue != 0 { //ResultOk
-			throw PulsarResult(cxx: result)
+			throw PulsarError(cxx: result)
 		}
 	}
 

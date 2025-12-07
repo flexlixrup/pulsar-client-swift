@@ -4,15 +4,23 @@ import Foundation
 import Logging
 import Synchronization
 
+/// Configuration for TLS/SSL connections.
 @frozen
 public struct TLSConfiguration: Sendable {
+	/// Whether TLS is enabled.
 	public var enabled: Bool
+	/// Path to the private key file.
 	public var privateKeyPath: URL?
+	/// Path to the certificate file.
 	public var certificatePath: URL?
+	/// Path to the trusted certificates file.
 	public var trustCertsPath: URL?
+	/// Whether to allow insecure connections.
 	public var allowInsecureConnection: Bool
+	/// Whether hostname verification is enabled.
 	public var hostnameVerificationEnabled: Bool
 
+	/// Creates a new TLS configuration.
 	public init(
 		enabled: Bool = false,
 		privateKeyPath: URL? = nil,
@@ -30,33 +38,43 @@ public struct TLSConfiguration: Sendable {
 	}
 }
 
+/// Configuration for backoff retry behavior.
 @frozen
 public struct BackoffConfiguration: Sendable {
+	/// Initial backoff duration.
 	public var initial: Duration
+	/// Maximum backoff duration.
 	public var max: Duration
 
+	/// Creates a new backoff configuration.
 	public init(initial: Duration = .milliseconds(100), max: Duration = .seconds(60)) {
 		self.initial = initial
 		self.max = max
 	}
 }
 
+/// Configuration for proxy connections.
 @frozen
 public struct ProxyConfiguration: Sendable {
+	/// The proxy service URL.
 	public var serviceUrl: URL
+	/// The proxy protocol to use.
 	public var proxyProtocol: ProxyProtocol
 
+	/// Creates a new proxy configuration.
 	public init(serviceUrl: URL, proxyProtocol: ProxyProtocol = .sni) {
 		self.serviceUrl = serviceUrl
 		self.proxyProtocol = proxyProtocol
 	}
 }
 
+/// Protocol to use for proxy connections.
 @frozen
 public enum ProxyProtocol: Int, Sendable {
 	case sni = 0
 }
 
+/// Configuration for a Pulsar client.
 public final class ClientConfiguration: Sendable {
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
@@ -65,27 +83,41 @@ public final class ClientConfiguration: Sendable {
 	}
 	private let state: Mutex<Box>
 
+	/// Memory limit in bytes.
 	public let memoryLimit: Int
+	/// Number of connections per broker.
 	public let connectionsPerBroker: Int
-	public let authentication: (any AuthenticationMethod)?
+	/// Timeout for operations.
 	public let operationsTimeout: Duration
+	/// Number of I/O threads.
 	public let ioThreads: Int
+	/// Number of message listener threads.
 	public let messageListenerThreads: Int
+	/// Maximum number of concurrent lookup requests.
 	public let concurrentLookupRequest: Int
+	/// Maximum number of lookup redirects.
 	public let maxLookupRedirects: Int
+	/// Backoff configuration for retries.
 	public let backoff: BackoffConfiguration
+	/// TLS configuration.
 	public let tls: TLSConfiguration
+	/// Listener name for broker selection.
 	public let listenerName: String?
+	/// Interval for collecting statistics.
 	public let statsInterval: Duration
+	/// Interval for updating partitions.
 	public let partitionsUpdateInterval: Duration
+	/// Timeout for establishing connections.
 	public let connectTimeout: Duration
+	/// Proxy configuration.
 	public let proxy: ProxyConfiguration?
+	/// Interval for keep-alive messages.
 	public let keepAliveInterval: Duration
 
+	/// Creates a new client configuration.
 	public init(
 		memoryLimit: Int = 0,
 		connectionsPerBroker: Int = 1,
-		authentication: (any AuthenticationMethod)? = nil,
 		operationsTimeout: Duration = .seconds(30),
 		ioThreads: Int = 1,
 		messageListenerThreads: Int = 1,
@@ -102,7 +134,6 @@ public final class ClientConfiguration: Sendable {
 	) {
 		self.state = Mutex(Box(CxxPulsar.pulsar.ClientConfiguration()))
 		self.memoryLimit = memoryLimit
-		self.authentication = authentication
 		self.connectionsPerBroker = connectionsPerBroker
 		self.operationsTimeout = operationsTimeout
 		self.ioThreads = ioThreads
@@ -156,11 +187,6 @@ public final class ClientConfiguration: Sendable {
 				if let proxy {
 					Bridge_CC_setProxyServiceUrl(ptr, proxy.serviceUrl.absoluteString)
 					Bridge_CC_setProxyProtocol(ptr, numericCast(proxy.proxyProtocol.rawValue))
-				}
-
-				if let authentication {
-					var authPointer = authentication.authPointer._authPointer
-					Bridge_CC_setAuthentication(ptr, &authPointer)
 				}
 			}
 		}

@@ -3,6 +3,7 @@ import CxxPulsar
 import Foundation
 import Synchronization
 
+/// Mode for routing messages to partitions.
 @frozen
 public enum PartitionsRoutingMode: Int, Sendable {
 	case singlePartition = 0
@@ -10,6 +11,7 @@ public enum PartitionsRoutingMode: Int, Sendable {
 	case custom = 2
 }
 
+/// Hashing scheme for message routing.
 @frozen
 public enum HashingScheme: Int, Sendable {
 	case murmur32 = 0
@@ -17,6 +19,7 @@ public enum HashingScheme: Int, Sendable {
 	case javaString = 2
 }
 
+/// Compression type for messages.
 @frozen
 public enum CompressionType: Int, Sendable {
 	case none = 0
@@ -26,6 +29,7 @@ public enum CompressionType: Int, Sendable {
 	case snappy = 4
 }
 
+/// Access mode for producer.
 @frozen
 public enum ProducerAccessMode: Int, Sendable {
 	case shared = 0
@@ -34,19 +38,26 @@ public enum ProducerAccessMode: Int, Sendable {
 	case exclusiveWithFencing = 3
 }
 
+/// Configuration for message batching.
 @frozen
 public struct BatchingConfiguration: Sendable {
+	/// Maximum number of messages in a batch.
 	public var maxMessages: UInt
+	/// Maximum size of a batch in bytes.
 	public var maxSize: UInt
+	/// Maximum delay for batching.
 	public var maxDelay: Duration
+	/// Type of batching to use.
 	public var type: BatchingType
 
+	/// Type of batching.
 	@frozen
 	public enum BatchingType: Int, Sendable {
 		case `default` = 0
 		case keyBased = 1
 	}
 
+	/// Creates a new batching configuration.
 	public init(
 		maxMessages: UInt = 1000,
 		maxSize: UInt = 128 * 1024,
@@ -60,6 +71,7 @@ public struct BatchingConfiguration: Sendable {
 	}
 }
 
+/// Configuration for a Pulsar producer.
 public final class ProducerConfiguration: Sendable {
 	// We have this safely synchronized via the Mutex
 	final class Box: @unchecked Sendable {
@@ -68,21 +80,36 @@ public final class ProducerConfiguration: Sendable {
 	}
 	private let state: Mutex<Box>
 
+	/// Producer name.
 	public let name: String?
+	/// Timeout for send operations.
 	public let sendTimeout: Duration
+	/// Initial sequence ID for messages.
 	public let initialSequenceId: Int64
+	/// Compression type to use.
 	public let compression: CompressionType
+	/// Maximum number of pending messages.
 	public let maxPendingMessages: Int
+	/// Maximum pending messages across partitions.
 	public let maxPendingMessagesAcrossPartitions: Int
+	/// Routing mode for partitioned topics.
 	public let routingMode: PartitionsRoutingMode
+	/// Hashing scheme for routing.
 	public let hashingScheme: HashingScheme
+	/// Whether to lazily start partitioned producers.
 	public let lazyStartPartitionedProducers: Bool
+	/// Whether to block when queue is full.
 	public let blockIfQueueFull: Bool
+	/// Batching configuration, or nil to disable batching.
 	public let batching: BatchingConfiguration?
+	/// Whether to enable chunking for large messages.
 	public let chunking: Bool
+	/// Access mode for the producer.
 	public let accessMode: ProducerAccessMode
+	/// Custom properties for the producer.
 	public let properties: [String: String]
 
+	/// Creates a new producer configuration.
 	public init(
 		name: String? = nil,
 		sendTimeout: Duration = .seconds(30),
