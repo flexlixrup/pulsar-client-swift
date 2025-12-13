@@ -25,6 +25,7 @@ jobs:
       - uses: swift-actions/setup-swift@v3
         with:
           swift-version: ${{ matrix.swift }}
+          skip-verify-signature: true
         name: Set up Swift
       - name: Test package
         run: swift test
