@@ -35,8 +35,8 @@ let package = Package(
 		),
 		.binaryTarget(
 			name: "CxxPulsar",
-			url: "https://github.com/flexlixrup/pulsar-client-cpp-bundle/releases/download/v3.8.0/libpulsar.artifactbundle.zip",
-			checksum: "f8e50605100153a60edb11ad9aa86b060bfbfc6fd31ccc09ef69fa98ea628982"
+			url: "https://github.com/flexlixrup/pulsar-client-cpp-bundle/releases/download/v4.0.0/libpulsar.artifactbundle.zip",
+			checksum: "6fcd9e43478e89d20516b4662a42c98289db5cce2d52342841413a2c5f6a2e0f"
 		),
 		.target(
 			name: "Bridge",
