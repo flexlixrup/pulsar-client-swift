@@ -6,12 +6,21 @@ name: Swift
 on:
   pull_request:
     branches: [ "main" ]
+  schedule:
+    - cron: "0 2 * * 0"
   workflow_dispatch:
 
 jobs:
-  tests:
-    name: tests
-    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@main
-    with:
-      linux_exclude_swift_versions: "[{\"swift_version\": \"5.9\"}, {\"swift_version\": \"5.10\"}, {\"swift_version\": \"6.0\"}, {\"swift_version\": \"6.1\"}]"
-      windows_exclude_swift_versions: "[{\"swift_version\": \"5.9\"}, {\"swift_version\": \"5.10\"}, {\"swift_version\": \"6.0\"}, {\"swift_version\": \"6.1\"}]"
+  test:
+    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, ubuntu-24.04-arm]
+        swift: ["6.2", "main-snapshot", "6.3-snapshot"]
+    steps:
+      - uses: swift-actions/setup-swift@v3
+        with:
+          swift-version: ${{ matrix.swift }}
+      - name: Get swift version
+        run: swift test
