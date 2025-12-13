@@ -93,6 +93,7 @@ public final class Listener<T: PulsarSchema>: Sendable, AsyncSequence {
 
 	/// Close the listener.
 	public func close() throws {
+		logger.info("Listener closed")
 		try consumerState.withLock { box in
 			if let consumer = box.consumer {
 				try consumer.close()

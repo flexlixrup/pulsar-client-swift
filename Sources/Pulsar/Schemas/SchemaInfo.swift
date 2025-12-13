@@ -26,7 +26,7 @@ public final class SchemaInfo: Sendable {
 				_Pulsar.SchemaInfo(
 					_Pulsar.SchemaType(Int8(schemaType.rawValue)),
 					std.string(name),
-					std.string(schema),
+					std.string(schema ?? ""),
 					_Pulsar.StringMap()
 				)
 			)
